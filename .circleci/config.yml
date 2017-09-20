@@ -1,0 +1,81 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: golang:1.9-alpine
+    working_directory: /go/src/github.com/danackerson/battlefleet
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run:
+          name: "Install Docker CE"
+          command: |
+            apk add -U jq curl openssh-client build-base git
+
+            VER="17.06.2"
+            curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
+
+            rm docker-$VER-ce.tgz && rm -f /var/cache/apk/*
+
+      - run:
+          name: "Fetch dependencies and test"
+          command: |
+            set -eu
+
+            go get github.com/jstemmer/go-junit-report
+            mkdir -p /tmp/test-results
+
+            go get -t -d -v ./...
+            go test -v ./... | go-junit-report > /tmp/test-results/unit-tests.xml
+      - type: test-results-store
+        path: /tmp/test-results
+
+      - run:
+          name: "Build, run and test docker image"
+          command: |
+            env GOOS=linux GOARCH=386 go build server.go
+            docker build -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
+            docker run -d -p 8083:8083 --name battlefleet danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
+            docker exec battlefleet curl -k --retry 10 --retry-delay 5 -v http://localhost:8083/ | grep Battle
+
+      - type: add-ssh-keys
+        name: "Load key"
+        fingerprints:
+          - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
+      - run:
+          name: Start ssh-agent
+          command: |
+            ssh-agent -s > ~/.ssh_agent_conf
+            source ~/.ssh_agent_conf
+            for _k in $(ls ${HOME}/.ssh/id_*); do
+              ssh-add ${_k} || true
+            done
+
+      - run:
+          name: Disable Digital Ocean firewall for deploy
+          command: |
+            curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/disableFW.sh | sh
+
+      - deploy:
+          name: "Upload to DockerHub, deploy container to Digital Ocean Droplet & launch"
+          command: |
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
+
+            source ~/.ssh_agent_conf
+            ssh-add -l
+
+            export DEPLOY_SERVER=deploy.ackerson.de
+            echo "Deploy to $DEPLOY_SERVER"
+
+            export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
+            $DEPLOY_CONNECT docker pull danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
+            $DEPLOY_CONNECT docker rm -f battlefleet || true
+            $DEPLOY_CONNECT docker run -d --restart=always -p 8083:8083 -e bfSecret=$bfSecret -e CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM -e mongoDBUser=$mongoDBUser -e mongoDBPass=$mongoDBPass -e mongoDBHost=$mongoDBHost --name battlefleet danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
+
+      - run:
+          name: Reenable Digital Ocean firewall
+          command: |
+            curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/reenableFW.sh | sh
+          when: always
