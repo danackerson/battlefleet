@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-	"time"
 
 	"github.com/danackerson/battlefleet/websockets"
 	"github.com/goincremental/negroni-sessions"
@@ -17,10 +15,6 @@ import (
 )
 
 var httpPort = ":8083"
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
 
 func main() {
 	parseEnvVariables()
@@ -30,6 +24,12 @@ func main() {
 	n := negroni.Classic()
 
 	store := cookiestore.New([]byte(secret))
+	store.Options(sessions.Options{
+		//Path:   "battlefleet",
+		//Domain: "ackerson.de",
+		MaxAge: 3600,
+	})
+
 	n.Use(sessions.Sessions("gurkherpadab", store))
 	n.UseHandler(mux)
 
@@ -60,9 +60,8 @@ func setUpMuxHandlers(mux *http.ServeMux) {
 		}
 	})
 
-	mux.HandleFunc("/test", serveTest)
 	mux.HandleFunc("/", homeHandler)
-	mux.HandleFunc("/ws", serveWS)
+	mux.HandleFunc("/wsInit", serveWebSocket)
 }
 
 // VersionHandler now commenteds
@@ -77,63 +76,43 @@ func VersionHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	hello := "hello"
-
 	w.Header().Set("Cache-Control", "max-age=10800")
+
+	session := sessions.GetSession(r)
+	session.Set("hello", "world") // e.g. login, gameID details?
+
 	render := render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: true,
 	})
 
-	render.HTML(w, http.StatusOK, "test", hello)
+	render.HTML(w, http.StatusOK, "home", "")
 }
 
-func serveWS(w http.ResponseWriter, r *http.Request) {
-	ws, err := upgrader.Upgrade(w, r, nil)
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func serveWebSocket(w http.ResponseWriter, r *http.Request) {
+	session := sessions.GetSession(r)
+	if session != nil && session.Get("hello") != nil {
+		log.Println("ws session: " + session.Get("hello").(string))
+	}
+
+	if r.Header.Get("Origin") != "http://"+r.Host {
+		http.Error(w, "Origin not allowed", 403)
+		return
+	}
+	ws, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
 		if _, ok := err.(websocket.HandshakeError); !ok {
-			log.Println(err)
+			log.Println("WS handshake + " + err.Error())
 		}
 		return
 	}
 
-	var lastMod time.Time
-	if n, err := strconv.ParseInt(r.FormValue("lastMod"), 16, 64); err == nil {
-		lastMod = time.Unix(0, n)
-	}
+	// TODO get/set cookie & find/create session
 
-	go websockets.Writer(ws, lastMod)
-	websockets.Reader(ws)
-}
-
-func serveTest(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/test" {
-		http.Error(w, "Not found", 404)
-		return
-	}
-	if r.Method != "GET" {
-		http.Error(w, "Method not allowed", 405)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	p, lastMod, err := websockets.ReadFileIfModified(time.Time{})
-	if err != nil {
-		p = []byte(err.Error())
-		lastMod = time.Unix(0, 0)
-	}
-	var v = struct {
-		Host    string
-		Data    string
-		LastMod string
-	}{
-		r.Host,
-		string(p),
-		strconv.FormatInt(lastMod.UnixNano(), 16),
-	}
-	render := render.New(render.Options{
-		Layout:        "content",
-		IsDevelopment: true,
-	})
-
-	render.HTML(w, http.StatusOK, "fileModified", &v)
+	go websockets.ServerTime(ws)
 }
