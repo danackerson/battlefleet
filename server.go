@@ -1,10 +1,14 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+	"strings"
+
+	uuid "gopkg.in/myesui/uuid.v1"
 
 	"github.com/danackerson/battlefleet/websockets"
 	"github.com/goincremental/negroni-sessions"
@@ -15,6 +19,7 @@ import (
 )
 
 var httpPort = ":8083"
+var sessionID = "battlefleetID"
 
 func main() {
 	parseEnvVariables()
@@ -30,7 +35,7 @@ func main() {
 		MaxAge: 2678400, // one month
 	})
 
-	n.Use(sessions.Sessions("gurkherpadab", store))
+	n.Use(sessions.Sessions(sessionID, store))
 	n.UseHandler(mux)
 
 	http.ListenAndServe(httpPort, n)
@@ -96,15 +101,24 @@ var upgrader = websocket.Upgrader{
 
 // https://github.com/riscie/websocket-tic-tac-toe/ <= cool ideas
 
-// todo: store an array of sessions
-// todo: have the user click on a button on homepage to start/enter a game
+// TODO store an array of sessions
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
-	if session != nil && session.Get("hello") != nil {
-		log.Println("ws session: " + session.Get("hello").(string))
-	} else {
-		log.Printf("ws session: %v", session)
+	if session.Get("gameUUID") == nil {
+		sessionIDCookie, _ := r.Cookie(sessionID)
+		sessionIDString := strings.Split(sessionIDCookie.String(), "=")[1]
+		gameUUID := uuid.NewV5(uuid.NameSpaceOID, sessionIDString)
+
+		session.Set("gameUUID", gameUUID.String())
 	}
+	// TODO: use for saving the gameState to MongoDB (mlab.com)
+	gameUUIDString := session.Get("gameUUID").(string)
+
+	// TODO: provide to end-users for "bookmarking/sharing" their game
+	encodedGameUUID := base64.StdEncoding.EncodeToString([]byte(gameUUIDString))
+
+	log.Println("Game UUID: " + gameUUIDString)
+	log.Println("Game UUID encoded: " + encodedGameUUID)
 
 	if r.Header.Get("Origin") != "http://"+r.Host {
 		http.Error(w, "Origin not allowed", 403)
@@ -117,8 +131,6 @@ func serveWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
-	// TODO get/set cookie & find/create session
 
 	go websockets.ServerTime(ws)
 }
