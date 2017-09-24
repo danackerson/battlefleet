@@ -25,9 +25,9 @@ func main() {
 
 	store := cookiestore.New([]byte(secret))
 	store.Options(sessions.Options{
-		//Path:   "battlefleet",
+		//Path: "battlefleet",
 		//Domain: "ackerson.de",
-		MaxAge: 3600,
+		MaxAge: 2678400, // one month
 	})
 
 	n.Use(sessions.Sessions("gurkherpadab", store))
@@ -94,10 +94,16 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+// https://github.com/riscie/websocket-tic-tac-toe/ <= cool ideas
+
+// todo: store an array of sessions
+// todo: have the user click on a button on homepage to start/enter a game
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
 	if session != nil && session.Get("hello") != nil {
 		log.Println("ws session: " + session.Get("hello").(string))
+	} else {
+		log.Printf("ws session: %v", session)
 	}
 
 	if r.Header.Get("Origin") != "http://"+r.Host {
