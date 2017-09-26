@@ -1,0 +1,18 @@
+<div id="app">
+  <p>Go <a href="/" style="color:white;">home</a></p>
+  <p>Welcome, {{ .CommanderName }}</p>
+
+  <div v-if="connectionState != 'OPEN'">
+    <button onclick="connectServer();">Engage!</button>
+  </div>
+  <div v-else>
+    <button onclick="disconnectServer();">Disengage!</button>
+  </div>
+
+  <div class="group connectionState">
+    Connection-State is: <em id="connection-state">${connectionState}</em>
+  </div>
+  <div class="group serverTime">
+    Server-Time is: <p id="serverTime">${serverTime}</p>
+  </div>
+</div>

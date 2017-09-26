@@ -1,9 +1,7 @@
-<div id="app">
-  <button onclick="connectServer();">Connect</button>
-  <div class="group connectionState">
-    Connection-State is: <em id="connection-state">${connectionState}</em>
-  </div>
-  <div class="group serverTime">
-    Server-Time is: <p id="serverTime">${serverTime}</p>
-  </div>
-</div>
+<p>Welcome, {{ .CommanderName }}</p>
+{{ if eq .GameUUID "__new__" }}
+<input type="button" onclick="location.href='/games/{{ .GameUUID }}?ts={{ .Timestamp }}';" value="New game!" />
+{{ else }}
+<input type="button" onclick="location.href='/games/__new__?ts={{ .Timestamp }}';" value="New game!" />
+<input type="button" onclick="location.href='/games/{{ .GameUUID }}?ts={{ .Timestamp }}';" value="Rejoin the fleet!" />
+{{ end }}
