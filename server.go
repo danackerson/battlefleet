@@ -33,8 +33,8 @@ func main() {
 
 	store := cookiestore.New([]byte(secret))
 	store.Options(sessions.Options{
-		Path: "/",
-		//Domain: "ackerson.de",
+		Path:   "/",
+		Domain: "battlefleet.ackerson.de",
 		MaxAge: 2678400, // one month
 	})
 

@@ -10,7 +10,11 @@ function disconnectServer() {
 
 function connectServer() {
   if (wsApp.$data.ws == null || wsApp.$data.ws.readyState == WebSocket.CLOSED) {
-    wsApp.$data.ws = new WebSocket('ws://' + window.location.host + '/wsInit');
+    var scheme = "wss:";
+    if (location.protocol == "http:") {
+      scheme = "ws:";
+    }
+    wsApp.$data.ws = new WebSocket(scheme + '//' + window.location.host + '/wsInit');
 
     if (wsApp.$data.ws.readyState != WebSocket.CLOSED) {
       wsApp.$data.ws.addEventListener('message', function(e) {

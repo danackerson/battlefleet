@@ -92,7 +92,9 @@ var upgrader = websocket.Upgrader{
 }
 
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Origin") != "http://"+r.Host {
+	scheme := strings.Split(r.Header.Get("Origin"), ":")[0]
+
+	if r.Header.Get("Origin") != scheme+"://"+r.Host {
 		http.Error(w, "Origin not allowed", 403)
 		return
 	}
