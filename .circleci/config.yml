@@ -32,17 +32,14 @@ jobs:
         path: /tmp/test-results
 
       - run:
-          name: "Build, run and test docker image"
+          name: "Build the docker image"
           command: |
             env GOOS=linux GOARCH=386 go build server.go
             docker build -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
-            docker run -d -p 8083:8083 --name battlefleet danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
-            docker exec battlefleet curl -k --retry 10 --retry-delay 5 -v http://localhost:8083/ | grep Battle
 
-      - type: add-ssh-keys
-        name: "Load key"
-        fingerprints:
-          - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
+      - add-ssh-keys:
+          fingerprints:
+            - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
       - run:
           name: Start ssh-agent
           command: |
@@ -72,7 +69,18 @@ jobs:
             export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
             $DEPLOY_CONNECT docker pull danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
             $DEPLOY_CONNECT docker rm -f battlefleet || true
-            $DEPLOY_CONNECT docker run -d --restart=always -p 8083:8083 -e bfSecret=$bfSecret -e CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM -e mongoDBUser=$mongoDBUser -e mongoDBPass=$mongoDBPass -e mongoDBHost=$mongoDBHost --name battlefleet danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
+
+            export DOCKER_RUN="docker run -d --restart=always --network='web' \
+              -e CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM -e bfSecret=$bfSecret \
+              -e mongoDBUser=$mongoDBUser -e mongoDBPass=$mongoDBPass \
+              -e mongoDBHost=$mongoDBHost \
+              --label='traefik.backend=battlefleet' \
+              --label='traefik.docker.network=web' \
+              --label='traefik.frontend.rule=Host:battlefleet.ackerson.de' \
+              --label='traefik.enable=true' \
+              --label='traefik.port=8083' \
+              --name battlefleet danackerson/battlefleet:vc$CIRCLE_BUILD_NUM"
+            $DEPLOY_CONNECT $DOCKER_RUN
 
       - run:
           name: Reenable Digital Ocean firewall
