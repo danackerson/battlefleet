@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -50,6 +51,7 @@ func main() {
 			Domain: "localhost",
 			MaxAge: 30 * 89280, // one month
 		})
+		log.Println("prodSession")
 	} else {
 		store.Options(sessions.Options{
 			Path:     "/",
@@ -58,6 +60,8 @@ func main() {
 			Secure:   true,
 			HTTPOnly: true,
 		})
+
+		log.Println("prodSession")
 	}
 
 	n.Use(sessions.Sessions(sessionID, store))
