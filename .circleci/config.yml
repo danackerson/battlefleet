@@ -73,7 +73,7 @@ jobs:
             export DOCKER_RUN="docker run -d --restart=always --network='web' \
               -e CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM -e bfSecret=$bfSecret \
               -e mongoDBUser=$mongoDBUser -e mongoDBPass=$mongoDBPass \
-              -e mongoDBHost=$mongoDBHost \
+              -e mongoDBHost=$mongoDBHost -e prodSession=$prodSession \
               --label='traefik.backend=battlefleet' \
               --label='traefik.docker.network=web' \
               --label='traefik.frontend.rule=Host:battlefleet.ackerson.de' \
