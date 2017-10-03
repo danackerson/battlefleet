@@ -35,51 +35,46 @@ const errorPage = `
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
     <link rel="stylesheet" href="/css/bf.css"/>
+		<link rel="icon" href="/images/wormhole.png">
   </head>
   <body>
     Invalid game ID. Double check the ID or make a new game.<br/>
 `
 
 func gameHandler(w http.ResponseWriter, r *http.Request) {
-	session := sessions.GetSession(r)
+	requestParams := mux.Vars(r)
 	sessionIDCookie, _ := r.Cookie(sessionID)
-	if sessionIDCookie == nil {
+	session := sessions.GetSession(r)
+	gameUUID := session.Get(gameUUIDKey)
+
+	// they come in without a cookie or request a gameID that doesn't match their own
+	if sessionIDCookie == nil || (gameUUID != requestParams["id"] && requestParams["id"] != newGameUUID) {
 		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, nil)
 		http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 		return
 	}
 
-	vars := mux.Vars(r)
-	if vars["id"] == "__new__" {
-		// TODO: perhaps warn they are about to lose their game?
-		session.Delete(gameUUIDKey)
-	}
-
-	// No gameUUID in session - so create a new one
-	if session.Get(gameUUIDKey) == nil {
+	if requestParams["id"] == newGameUUID || gameUUID == nil {
+		// TODO: if __new__ but they have a gameUUID perhaps warn they are about to lose their game?
 		sessionIDString := strings.Split(sessionIDCookie.String(), "=")[1]
-		gameUUID := uuid.NewV5(uuid.NameSpaceOID, sessionIDString)
-		session.Set(gameUUIDKey, gameUUID.String())
-		http.Redirect(w, r, "/games/"+gameUUID.String(), http.StatusMovedPermanently)
-	} else {
-		gameUUID := session.Get(gameUUIDKey).(string)
-		if gameUUID != vars["id"] { // URL doesn't match gameUUID - redirect
-			http.Redirect(w, r, "/games/"+gameUUID, http.StatusMovedPermanently)
-		}
+		newlyGameUUID := uuid.NewV5(uuid.NameSpaceOID, sessionIDString)
+		session.Set(gameUUIDKey, newlyGameUUID.String())
+		http.Redirect(w, r, "/games/"+newlyGameUUID.String(), http.StatusMovedPermanently)
+		return
 	}
 
-	// TODO: use for saving the gameState to MongoDB (mlab.com)
-	gameUUIDString := session.Get(gameUUIDKey).(string)
+	log.Printf("gameUUID: %v+\n", gameUUID)
 
 	render := render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: true,
 	})
-	// comment
+
+	// TODO: use for saving the gameState to MongoDB (mlab.com)
 	gameInfo := GameInfo{
 		Timestamp:     strconv.FormatInt(time.Now().UTC().UnixNano(), 10),
-		GameUUID:      template.JS(gameUUIDString),
+		GameUUID:      template.JS(gameUUID.(string)),
 		CommanderName: "Janeway",
 	}
 

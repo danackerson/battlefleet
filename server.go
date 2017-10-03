@@ -15,14 +15,25 @@ import (
 	"github.com/urfave/negroni"
 )
 
+var prodSession = false
 var httpPort = ":8083"
 var sessionID = "battlefleetID"
 var gameUUIDKey = "gameUUID"
+var newGameUUID = "__new__"
 var mongoDBUser string
 var mongoDBPass string
 var mongoDBHost string
 var version string
 var secret string
+
+func parseEnvVariables() {
+	prodSession, _ = strconv.ParseBool(os.Getenv("prodSession"))
+	mongoDBUser = os.Getenv("mongoDBUser")
+	mongoDBPass = os.Getenv("mongoDBPass")
+	mongoDBHost = os.Getenv("mongoDBHost")
+	version = os.Getenv("CIRCLE_BUILD_NUM")
+	secret = os.Getenv("bfSecret")
+}
 
 func main() {
 	parseEnvVariables()
@@ -32,11 +43,22 @@ func main() {
 	n := negroni.Classic()
 
 	store := cookiestore.New([]byte(secret))
-	store.Options(sessions.Options{
-		Path:   "/",
-		Domain: "battlefleet.ackerson.de",
-		MaxAge: 2678400, // one month
-	})
+
+	if !prodSession {
+		store.Options(sessions.Options{
+			Path:   "/",
+			Domain: "localhost",
+			MaxAge: 30 * 89280, // one month
+		})
+	} else {
+		store.Options(sessions.Options{
+			Path:     "/",
+			Domain:   "battlefleet.ackerson.de",
+			MaxAge:   30 * 89280, // one month
+			Secure:   true,
+			HTTPOnly: true,
+		})
+	}
 
 	n.Use(sessions.Sessions(sessionID, store))
 	n.UseHandler(router)
@@ -69,7 +91,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 			cmdrName = "Captain Janeway"
 		}
 	} else {
-		gameUUID = "__new__"
+		gameUUID = newGameUUID
 	}
 	session.Set(gameUUIDKey, gameUUID.(string))
 
@@ -84,14 +106,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		CommanderName: cmdrName,
 	}
 	render.HTML(w, http.StatusOK, "home", gameInfo)
-}
-
-func parseEnvVariables() {
-	mongoDBUser = os.Getenv("mongoDBUser")
-	mongoDBPass = os.Getenv("mongoDBPass")
-	mongoDBHost = os.Getenv("mongoDBHost")
-	version = os.Getenv("CIRCLE_BUILD_NUM")
-	secret = os.Getenv("bfSecret")
 }
 
 // VersionHandler now commenteds
