@@ -29,6 +29,7 @@ var secret string
 
 func parseEnvVariables() {
 	prodSession, _ = strconv.ParseBool(os.Getenv("prodSession"))
+	log.Printf("%t", prodSession)
 	mongoDBUser = os.Getenv("mongoDBUser")
 	mongoDBPass = os.Getenv("mongoDBPass")
 	mongoDBHost = os.Getenv("mongoDBHost")
@@ -51,7 +52,7 @@ func main() {
 			Domain: "localhost",
 			MaxAge: 30 * 89280, // one month
 		})
-		log.Println("prodSession")
+		log.Println("NOT prodSession")
 	} else {
 		store.Options(sessions.Options{
 			Path:     "/",
