@@ -147,8 +147,8 @@ func TestVersion(t *testing.T) {
 	res, req := prepareServeHTTP("POST", "http://localhost"+httpPort+"/version", "", nil)
 	router.ServeHTTP(res, req)
 
-	// Verify we get a TEST build version id back
-	exp := "{\"build\":\"TEST\",\"version\":\"https://circleci.com/gh/danackerson/battlefleet/TEST\"}"
+	// Verify we get the build version id back
+	exp := "{\"build\":\"" + version + "\",\"version\":\"https://circleci.com/gh/danackerson/battlefleet/" + version + "\"}"
 	act := res.Body.String()
 	if !strings.Contains(act, exp) {
 		t.Fatalf("Expected %s got %s", exp, act)
