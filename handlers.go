@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/danackerson/battlefleet/websockets"
-	sessions "github.com/goincremental/negroni-sessions"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/unrolled/render"
@@ -43,12 +43,16 @@ const errorPage = `
 
 func gameHandler(w http.ResponseWriter, r *http.Request) {
 	requestParams := mux.Vars(r)
-	sessionIDCookie, _ := r.Cookie(sessionID)
-	session := sessions.GetSession(r)
-	gameUUID := session.Get(gameUUIDKey)
-
+	// if requestParams == nil but r.URI looks good it's a TEST
+	if len(requestParams) == 0 && r.URL.Path != "/games/" {
+		requestParams = make(map[string]string)
+		requestParams["id"] = strings.TrimLeft(r.URL.Path, "/games/")
+	}
+	session, _ := store.Get(r, sessionCookieKey)
+	gameUUID := session.Values[gameUUIDKey]
+	// TODO: test with new Gorilla sessions!
 	// they come in without a cookie or request a gameID that doesn't match their own
-	if sessionIDCookie == nil || (gameUUID != requestParams["id"] && requestParams["id"] != newGameUUID) {
+	if requestParams["id"] != newGameUUID && gameUUID != requestParams["id"] {
 		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, nil)
 		http.Redirect(w, r, "/", http.StatusPreconditionRequired)
@@ -57,14 +61,15 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 
 	if requestParams["id"] == newGameUUID || gameUUID == nil {
 		// TODO: if __new__ but they have a gameUUID perhaps warn they are about to lose their game?
-		sessionIDString := strings.Split(sessionIDCookie.String(), "=")[1]
-		newlyGameUUID := uuid.NewV5(uuid.NameSpaceOID, sessionIDString)
-		session.Set(gameUUIDKey, newlyGameUUID.String())
-		http.Redirect(w, r, "/games/"+newlyGameUUID.String(), http.StatusMovedPermanently)
+		sessionIDHash := session.ID + time.Now().String()
+		session.Values[gameUUIDKey] = uuid.NewV5(uuid.NameSpaceOID, sessionIDHash).String()
+		log.Printf("1st gameUUID: %s", session.Values[gameUUIDKey])
+		if e := session.Save(r, w); e != nil {
+			panic(e) // for now
+		}
+		http.Redirect(w, r, "/games/"+session.Values[gameUUIDKey].(string), http.StatusMovedPermanently)
 		return
 	}
-
-	log.Printf("gameUUID: %v+\n", gameUUID)
 
 	render := render.New(render.Options{
 		Layout:        "content",

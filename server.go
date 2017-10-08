@@ -3,38 +3,55 @@ package main
 import (
 	"encoding/json"
 	"html/template"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/goincremental/negroni-sessions"
-	"github.com/goincremental/negroni-sessions/cookiestore"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/unrolled/render"
 	"github.com/urfave/negroni"
 )
 
 var prodSession = false
 var httpPort = ":8083"
-var sessionID = "battlefleetID"
+var sessionCookieKey = "battlefleetID"
 var gameUUIDKey = "gameUUID"
 var newGameUUID = "__new__"
 var mongoDBUser string
 var mongoDBPass string
 var mongoDBHost string
 var version string
-var secret string
+var store *sessions.FilesystemStore
 
 func parseEnvVariables() {
 	prodSession, _ = strconv.ParseBool(os.Getenv("prodSession"))
-	log.Printf("%t", prodSession)
+	store = sessions.NewFilesystemStore("/tmp", []byte(os.Getenv("bfSecret")))
+
+	if !prodSession {
+		store.Options = &sessions.Options{
+			Path:   "/",
+			Domain: "localhost",
+			MaxAge: 30 * 89280, // one month
+		}
+	} else {
+		store.Options = &sessions.Options{
+			Path:     "/",
+			Domain:   "battlefleet.ackerson.de",
+			MaxAge:   30 * 89280, // one month
+			Secure:   true,
+			HttpOnly: true,
+		}
+	}
+
 	mongoDBUser = os.Getenv("mongoDBUser")
 	mongoDBPass = os.Getenv("mongoDBPass")
 	mongoDBHost = os.Getenv("mongoDBHost")
 	version = os.Getenv("CIRCLE_BUILD_NUM")
-	secret = os.Getenv("bfSecret")
+	if version == "" {
+		version = "TEST"
+	}
 }
 
 func main() {
@@ -43,29 +60,6 @@ func main() {
 	router := mux.NewRouter()
 	setUpMuxHandlers(router)
 	n := negroni.Classic()
-
-	store := cookiestore.New([]byte(secret))
-
-	if !prodSession {
-		store.Options(sessions.Options{
-			Path:   "/",
-			Domain: "localhost",
-			MaxAge: 30 * 89280, // one month
-		})
-		log.Println("NOT prodSession")
-	} else {
-		store.Options(sessions.Options{
-			Path:     "/",
-			Domain:   "battlefleet.ackerson.de",
-			MaxAge:   30 * 89280, // one month
-			Secure:   true,
-			HTTPOnly: true,
-		})
-
-		log.Println("prodSession")
-	}
-
-	n.Use(sessions.Sessions(sessionID, store))
 	n.UseHandler(router)
 
 	http.ListenAndServe(httpPort, n)
@@ -77,36 +71,36 @@ func setUpMuxHandlers(router *mux.Router) {
 	router.HandleFunc("/wsInit", serveWebSocket)
 	router.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			VersionHandler(w, r)
+			versionHandler(w, r)
 		}
 	})
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Cache-Control", "max-age=10800")
-
-	session := sessions.GetSession(r)
+	session, _ := store.Get(r, sessionCookieKey)
 
 	cmdrName := "n/a"
-	gameUUID := session.Get(gameUUIDKey)
+	gameUUID := session.Values[gameUUIDKey]
 	if gameUUID != nil {
 		// TODO search for gameID in mongoDB and reload state
 		// perhaps even redirect to /games/{gameUUID} ?
-		if session.Get("cmdrName") == nil {
-			cmdrName = "Captain Janeway"
+		if session.Values["cmdrName"] == nil {
+			session.Values["cmdrName"] = "Captain Janeway"
 		}
 	} else {
 		gameUUID = newGameUUID
 	}
-	session.Set(gameUUIDKey, gameUUID.(string))
-
+	session.Values[gameUUIDKey] = gameUUID
+	if e := session.Save(r, w); e != nil {
+		panic(e) // for now
+	}
 	render := render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: true,
 	})
 
 	gameInfo := GameInfo{
-		GameUUID:      template.JS(gameUUID.(string)),
+		GameUUID:      template.JS(session.Values[gameUUIDKey].(string)),
 		Timestamp:     strconv.FormatInt(time.Now().UTC().UnixNano(), 10),
 		CommanderName: cmdrName,
 	}
@@ -114,7 +108,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // VersionHandler now commenteds
-func VersionHandler(w http.ResponseWriter, req *http.Request) {
+func versionHandler(w http.ResponseWriter, req *http.Request) {
 	buildURL := "https://circleci.com/gh/danackerson/battlefleet/" + version
 	v := map[string]string{"version": buildURL, "build": version}
 
