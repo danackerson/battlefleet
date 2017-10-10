@@ -101,7 +101,11 @@ var upgrader = websocket.Upgrader{
 }
 
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	serverPort := strings.Split(r.Host, ":")[1]
+	serverPort := httpPort
+	remoteHostSettings := strings.Split(r.Host, ":")
+	if len(remoteHostSettings) > 0 {
+		serverPort = remoteHostSettings[1]
+	}
 	scheme := strings.Split(r.Header.Get("Origin"), ":")[0]
 
 	// test server runs on different port
