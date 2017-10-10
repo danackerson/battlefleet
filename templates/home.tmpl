@@ -1,6 +1,9 @@
 <p>Welcome, {{ .CommanderName }}</p>
 {{ if eq .GameUUID "__new__" }}
-<input type="button" onclick="location.href='/games/{{ .GameUUID }}?ts={{ .Timestamp }}';" value="New game!" />
+<form action="/games/{{ .GameUUID }}?ts={{ .Timestamp }}" method="post">
+  Name: <input type="text" name="cmdrName" required>
+  <input type="submit" value="New game!" />
+</form>
 {{ else }}
 <input type="button" onclick="location.href='/games/__new__?ts={{ .Timestamp }}';" value="New game!" />
 <input type="button" onclick="location.href='/games/{{ .GameUUID }}?ts={{ .Timestamp }}';" value="Rejoin the fleet!" />

@@ -43,13 +43,20 @@ const errorPage = `
 
 func gameHandler(w http.ResponseWriter, r *http.Request) {
 	requestParams := mux.Vars(r)
-	// if requestParams == nil but r.URI looks good it's a TEST
-	if len(requestParams) == 0 && r.URL.Path != "/games/" {
-		requestParams = make(map[string]string)
-		requestParams["id"] = strings.TrimLeft(r.URL.Path, "/games/")
+	parseErr := r.ParseForm()
+	if parseErr != nil {
+		log.Println(parseErr)
 	}
-	session, _ := store.Get(r, sessionCookieKey)
+
+	session, _ := sessionStore.Get(r, sessionCookieKey)
+	if r.FormValue("cmdrName") != "" {
+		session.Values[cmdrNameKey] = r.FormValue("cmdrName")
+		if e := session.Save(r, w); e != nil {
+			panic(e) // for now
+		}
+	}
 	gameUUID := session.Values[gameUUIDKey]
+
 	// TODO: test with new Gorilla sessions!
 	// they come in without a cookie or request a gameID that doesn't match their own
 	if requestParams["id"] != newGameUUID && gameUUID != requestParams["id"] {
@@ -63,7 +70,6 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 		// TODO: if __new__ but they have a gameUUID perhaps warn they are about to lose their game?
 		sessionIDHash := session.ID + time.Now().String()
 		session.Values[gameUUIDKey] = uuid.NewV5(uuid.NameSpaceOID, sessionIDHash).String()
-		log.Printf("1st gameUUID: %s", session.Values[gameUUIDKey])
 		if e := session.Save(r, w); e != nil {
 			panic(e) // for now
 		}
@@ -80,7 +86,7 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 	gameInfo := GameInfo{
 		Timestamp:     strconv.FormatInt(time.Now().UTC().UnixNano(), 10),
 		GameUUID:      template.JS(gameUUID.(string)),
-		CommanderName: "Janeway",
+		CommanderName: session.Values[cmdrNameKey].(string),
 	}
 
 	render.HTML(w, http.StatusOK, "game", gameInfo)
@@ -89,17 +95,24 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
+	serverPort := strings.Split(r.Host, ":")[1]
 	scheme := strings.Split(r.Header.Get("Origin"), ":")[0]
 
-	if r.Header.Get("Origin") != scheme+"://"+r.Host {
+	// test server runs on different port
+	if serverPort == httpPort && r.Header.Get("Origin") != scheme+"://"+r.Host {
 		http.Error(w, "Origin not allowed", 403)
 		return
 	}
+
 	ws, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
+		log.Println("error: " + err.Error())
 		if _, ok := err.(websocket.HandshakeError); !ok {
 			log.Println("WS handshake + " + err.Error())
 		}

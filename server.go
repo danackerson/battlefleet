@@ -17,26 +17,27 @@ import (
 var prodSession = false
 var httpPort = ":8083"
 var sessionCookieKey = "battlefleetID"
+var cmdrNameKey = "cmdrName"
 var gameUUIDKey = "gameUUID"
 var newGameUUID = "__new__"
 var mongoDBUser string
 var mongoDBPass string
 var mongoDBHost string
 var version string
-var store *sessions.FilesystemStore
+var sessionStore *sessions.FilesystemStore
 
 func parseEnvVariables() {
 	prodSession, _ = strconv.ParseBool(os.Getenv("prodSession"))
-	store = sessions.NewFilesystemStore("/tmp", []byte(os.Getenv("bfSecret")))
+	sessionStore = sessions.NewFilesystemStore("/tmp", []byte(os.Getenv("bfSecret")))
 
 	if !prodSession {
-		store.Options = &sessions.Options{
+		sessionStore.Options = &sessions.Options{
 			Path:   "/",
 			Domain: "localhost",
 			MaxAge: 30 * 89280, // one month
 		}
 	} else {
-		store.Options = &sessions.Options{
+		sessionStore.Options = &sessions.Options{
 			Path:     "/",
 			Domain:   "battlefleet.ackerson.de",
 			MaxAge:   30 * 89280, // one month
@@ -77,20 +78,19 @@ func setUpMuxHandlers(router *mux.Router) {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	session, _ := store.Get(r, sessionCookieKey)
+	session, _ := sessionStore.Get(r, sessionCookieKey)
 
-	cmdrName := "n/a"
-	gameUUID := session.Values[gameUUIDKey]
-	if gameUUID != nil {
+	if session.Values[cmdrNameKey] == nil {
+		session.Values[cmdrNameKey] = "stranger!"
+	}
+
+	if session.Values[gameUUIDKey] != nil {
 		// TODO search for gameID in mongoDB and reload state
 		// perhaps even redirect to /games/{gameUUID} ?
-		if session.Values["cmdrName"] == nil {
-			session.Values["cmdrName"] = "Captain Janeway"
-		}
 	} else {
-		gameUUID = newGameUUID
+		session.Values[gameUUIDKey] = newGameUUID
 	}
-	session.Values[gameUUIDKey] = gameUUID
+
 	if e := session.Save(r, w); e != nil {
 		panic(e) // for now
 	}
@@ -102,7 +102,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	gameInfo := GameInfo{
 		GameUUID:      template.JS(session.Values[gameUUIDKey].(string)),
 		Timestamp:     strconv.FormatInt(time.Now().UTC().UnixNano(), 10),
-		CommanderName: cmdrName,
+		CommanderName: session.Values[cmdrNameKey].(string),
 	}
 	render.HTML(w, http.StatusOK, "home", gameInfo)
 }

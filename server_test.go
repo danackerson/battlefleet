@@ -4,15 +4,18 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/gorilla/websocket"
 )
 
 var host = "http://localhost" + httpPort
+var wsHost = "ws://localhost" + httpPort
 var router = mux.NewRouter()
 var expiration = time.Now().Add(30 * 24 * time.Hour)
 
@@ -23,20 +26,26 @@ func init() {
 
 // lot of moving parts in here - no need to rewrite 25 times for testing
 // be careful of sessions and cookies
-func prepareServeHTTP(requestType string, requestURL string, sessionCookie string, session *sessions.Session) (*httptest.ResponseRecorder, *http.Request) {
+func prepareServeHTTP(requestType string, requestURL string, sessionCookie string, session *sessions.Session, formVariables *strings.Reader) (*httptest.ResponseRecorder, *http.Request) {
 	req := httptest.NewRequest(requestType, requestURL, nil)
+	if formVariables != nil {
+		req = httptest.NewRequest(requestType, requestURL, formVariables)
+	}
 	res := httptest.NewRecorder()
+
+	if requestType == "POST" {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
 
 	if sessionCookie != "" {
 		req.AddCookie(&http.Cookie{Name: sessionCookieKey, Value: sessionCookie, Expires: expiration})
 	}
 
 	if session == nil {
-		session, _ = store.Get(req, sessionCookieKey)
+		session, _ = sessionStore.Get(req, sessionCookieKey)
 		session.Values[gameUUIDKey] = newGameUUID
-	} else {
-		log.Printf("gameUUID in sessionPrep: %s", session.Values[gameUUIDKey])
 	}
+
 	if e := session.Save(req, res); e != nil {
 		panic(e) // for now
 	}
@@ -56,9 +65,9 @@ func TestHome1Game1Home2(t *testing.T) {
 	sessionCookie := ""
 
 	// FIRST homepage visit - no session
-	res, req := prepareServeHTTP("GET", host+"/", sessionCookie, nil)
+	res, req := prepareServeHTTP("GET", host+"/", sessionCookie, nil, nil)
 	router.ServeHTTP(res, req)
-	session, sessErr := store.Get(req, sessionCookieKey)
+	session, sessErr := sessionStore.Get(req, sessionCookieKey)
 	if sessErr != nil {
 		log.Printf("sessErr 1: %v\n", sessErr)
 	}
@@ -78,18 +87,23 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 
 	// SECOND visit New Game page
-	res, req = prepareServeHTTP("GET", host+exp1, sessionCookie, session)
+	formVariables := strings.NewReader("cmdrName=Shade")
+	res, req = prepareServeHTTP("POST", host+exp1, sessionCookie, session, formVariables)
 	router.ServeHTTP(res, req)
-	session, _ = store.Get(req, sessionCookieKey)
+
+	session, _ = sessionStore.Get(req, sessionCookieKey)
 	newGameURL := res.Header().Get("Location")
 	gameUUID := session.Values[gameUUIDKey].(string)
-	if res.Code != 301 || !strings.Contains(newGameURL, gameUUID) {
+	cmdrNamed := session.Values[cmdrNameKey].(string)
+	if res.Code != 301 || cmdrNamed != "Shade" || !strings.Contains(newGameURL, gameUUID) {
 		t.Fatalf("Expecting redirect to /games/%s", gameUUID)
 	}
 
 	// THIRD follow redirect to The Game page ;)
-	res, req = prepareServeHTTP("GET", host+newGameURL, sessionCookie, session)
+	res, req = prepareServeHTTP("GET", host+newGameURL, sessionCookie, session, nil)
 	router.ServeHTTP(res, req)
+
+	session, _ = sessionStore.Get(req, sessionCookieKey)
 	act = res.Body.String()
 	if res.Code != 200 || !strings.Contains(act, "Engage!") {
 		log.Printf("%s\n", act)
@@ -97,9 +111,9 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 
 	// FOURTH revisit Home and verify the "Rejoin Fleet!" @ gameUUID URL
-	res, req = prepareServeHTTP("GET", host+"/", sessionCookie, session)
+	res, req = prepareServeHTTP("GET", host+"/", sessionCookie, session, nil)
 	router.ServeHTTP(res, req)
-	session, sessErr = store.Get(req, sessionCookieKey)
+	session, sessErr = sessionStore.Get(req, sessionCookieKey)
 	if sessErr != nil {
 		log.Printf("sessErr 3: %v\n", sessErr)
 	} else {
@@ -111,22 +125,22 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 
 	// FIFTH visit "/games/__new__" and verify a new gameUUIDKey
-	res, req = prepareServeHTTP("GET", host+"/games/"+newGameUUID, sessionCookie, session)
+	res, req = prepareServeHTTP("GET", host+"/games/"+newGameUUID, sessionCookie, session, nil)
 	router.ServeHTTP(res, req)
-	session, _ = store.Get(req, sessionCookieKey)
+	session, _ = sessionStore.Get(req, sessionCookieKey)
 	newGameURL = res.Header().Get("Location")
 	if res.Code != 301 && strings.Contains(newGameURL, gameUUID) {
 		t.Fatalf("Expecting redirect to %s", newGameURL)
-	} else {
-		log.Printf("redirect to %s", newGameURL)
 	}
 
 	// SIXTH visit new game page and verify new gameUUID
-	res, req = prepareServeHTTP("GET", host+newGameURL, sessionCookie, session)
+	formVariables = strings.NewReader("cmdrName=Tipsy")
+	res, req = prepareServeHTTP("POST", host+newGameURL, sessionCookie, session, formVariables)
 	router.ServeHTTP(res, req)
-	session, _ = store.Get(req, sessionCookieKey)
+	session, _ = sessionStore.Get(req, sessionCookieKey)
 	gameUUIDNew := session.Values[gameUUIDKey].(string)
-	if gameUUIDNew == gameUUID {
+	cmdrNamed = session.Values[cmdrNameKey].(string)
+	if gameUUIDNew == gameUUID || cmdrNamed != "Tipsy" {
 		t.Fatalf("Expected new gameUUID (%s)", gameUUIDNew)
 	}
 	act = res.Body.String()
@@ -136,15 +150,58 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 }
 
+// TestWebSocketConnect currently just verifies working WebSocket handler (datetime)
+// TODO: verify valid session w/ gameUUID before responding
 func TestWebSocketConnect(t *testing.T) {
-	// TODO
 	t.Parallel()
+
+	/*sessionCookie := ""
+
+	// 0. visit "/games/__new__" and get a new gameUUIDKey
+	res, req := prepareServeHTTP("GET", host+"/games/"+newGameUUID, sessionCookie, nil)
+	router.ServeHTTP(res, req)
+	session, _ := store.Get(req, sessionCookieKey)
+	newGameURL := res.Header().Get("Location")
+
+	// 1. visit new game page and verify new gameUUID
+	reader := strings.NewReader("cmdrName=WSUser")
+	res, req = prepareServeHTTP("POST", host+newGameURL, sessionCookie, session, reader)
+	router.ServeHTTP(res, req)
+	//session, _ = store.Get(req, sessionCookieKey)
+	//gameUUID := session.Values[gameUUIDKey].(string)*/
+
+	// 2. open websocket and get server time
+	srv := httptest.NewServer(http.HandlerFunc(serveWebSocket))
+	u, _ := url.Parse(srv.URL)
+	u.Scheme = "ws"
+	//log.Printf("Testing server @ %+v\n", u)
+
+	conn, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		t.Fatalf("cannot make websocket connection: %v => %v", err, resp)
+	}
+	err = conn.WriteMessage(websocket.TextMessage, []byte("OPEN"))
+	if err != nil {
+		t.Fatalf("cannot write message: %v", err)
+	}
+	msgType, msgText, err := conn.ReadMessage()
+	if err != nil {
+		t.Fatalf("cannot read message: %v", err)
+	} else if msgType != 1 {
+		t.Fatalf("unexpected msgType (%d) => %s", msgType, msgText)
+	}
+
+	// 3. close websocket and verify graceful shutdown
+	err = conn.Close()
+	if err != nil {
+		t.Fatalf("cannot close WebSocket: %v", err)
+	}
 }
 
 func TestVersion(t *testing.T) {
 	t.Parallel()
 
-	res, req := prepareServeHTTP("POST", "http://localhost"+httpPort+"/version", "", nil)
+	res, req := prepareServeHTTP("POST", host+"/version", "", nil, nil)
 	router.ServeHTTP(res, req)
 
 	// Verify we get the build version id back
