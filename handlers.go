@@ -103,7 +103,7 @@ var upgrader = websocket.Upgrader{
 func serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	serverPort := httpPort
 	remoteHostSettings := strings.Split(r.Host, ":")
-	if len(remoteHostSettings) > 0 {
+	if len(remoteHostSettings) > 1 {
 		serverPort = remoteHostSettings[1]
 	}
 	scheme := strings.Split(r.Header.Get("Origin"), ":")[0]
