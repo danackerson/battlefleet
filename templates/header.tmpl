@@ -2,6 +2,16 @@
 <!DOCTYPE html>
 <html>
   <head>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-35450644-3"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'GA_TRACKING_ID', { 'anonymize_ip': true });
+        gtag('config', 'UA-35450644-3');
+      </script>
+
       <meta http-equiv="content-type" content="text/html; charset=UTF-8">
       <meta name="robots" content="noindex, nofollow">
       <meta name="googlebot" content="noindex, nofollow">
@@ -10,8 +20,19 @@
       <link rel="icon" href="/images/dralthi_orig.png">
       <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
       <script type="text/javascript" src="/js/bf.js"></script>
+      <script type="text/javascript" src="/js/consent.js"></script>
 
       <title>Battle Fleet!</title>
   </head>
   <body>
+    <div id="cookieBanner">
+        <div id="cookieBannerClose"><a href="#">x</a></div>
+        This website uses third party cookies exclusively to collect analytics data.
+        If you continue browsing or close this notice, you will accept their use.
+        <div id="cookieBannerActions">
+            <a class="noconsent" href="https://ackerson.de/impressum.html">Learn about this website's cookies</a>
+            &mdash;
+            <a class="denyConsent noconsent" href="#">Disallow cookies</a>
+        </div>
+    </div>
 {{end}}
