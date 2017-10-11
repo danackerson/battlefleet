@@ -17,36 +17,40 @@ import (
 var host = "http://localhost" + httpPort
 var wsHost = "ws://localhost" + httpPort
 var router = mux.NewRouter()
-var expiration = time.Now().Add(30 * 24 * time.Hour)
 
 func init() {
 	parseEnvVariables()
 	setUpMuxHandlers(router)
 }
 
-// lot of moving parts in here - no need to rewrite 25 times for testing
-// be careful of sessions and cookies
-func prepareServeHTTP(requestType string, requestURL string, sessionCookie string, session *sessions.Session, formVariables *strings.Reader) (*httptest.ResponseRecorder, *http.Request) {
-	req := httptest.NewRequest(requestType, requestURL, nil)
-	if formVariables != nil {
-		req = httptest.NewRequest(requestType, requestURL, formVariables)
+type testRequestContext struct {
+	requestType   string
+	requestURL    string
+	sessionCookie string
+	session       *sessions.Session
+	formVariables *strings.Reader
+}
+
+func prepareServeHTTP(context *testRequestContext) (*httptest.ResponseRecorder, *http.Request) {
+	req := httptest.NewRequest(context.requestType, context.requestURL, nil)
+	if context.formVariables != nil {
+		req = httptest.NewRequest(context.requestType, context.requestURL, context.formVariables)
 	}
 	res := httptest.NewRecorder()
 
-	if requestType == "POST" {
+	if context.requestType == "POST" {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
-
-	if sessionCookie != "" {
-		req.AddCookie(&http.Cookie{Name: sessionCookieKey, Value: sessionCookie, Expires: expiration})
+	if context.sessionCookie != "" {
+		req.AddCookie(&http.Cookie{Name: sessionCookieKey, Value: context.sessionCookie, Expires: time.Now().Add(30 * 24 * time.Hour)})
 	}
 
-	if session == nil {
-		session, _ = sessionStore.Get(req, sessionCookieKey)
-		session.Values[gameUUIDKey] = newGameUUID
+	if context.session == nil {
+		context.session, _ = sessionStore.Get(req, sessionCookieKey)
+		context.session.Values[gameUUIDKey] = newGameUUID
 	}
 
-	if e := session.Save(req, res); e != nil {
+	if e := context.session.Save(req, res); e != nil {
 		panic(e) // for now
 	}
 
@@ -65,7 +69,11 @@ func TestHome1Game1Home2(t *testing.T) {
 	sessionCookie := ""
 
 	// FIRST homepage visit - no session
-	res, req := prepareServeHTTP("GET", host+"/", sessionCookie, nil, nil)
+	context := &testRequestContext{
+		requestType: "GET", requestURL: host + "/",
+		sessionCookie: sessionCookie, session: nil, formVariables: nil,
+	}
+	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, sessErr := sessionStore.Get(req, sessionCookieKey)
 	if sessErr != nil {
@@ -87,8 +95,13 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 
 	// SECOND visit New Game page
-	formVariables := strings.NewReader("cmdrName=Shade")
-	res, req = prepareServeHTTP("POST", host+exp1, sessionCookie, session, formVariables)
+	context = &testRequestContext{
+		requestType:   "POST",
+		requestURL:    host + exp1,
+		sessionCookie: sessionCookie, session: session,
+		formVariables: strings.NewReader("cmdrName=Shade"),
+	}
+	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 
 	session, _ = sessionStore.Get(req, sessionCookieKey)
@@ -100,7 +113,12 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 
 	// THIRD follow redirect to The Game page ;)
-	res, req = prepareServeHTTP("GET", host+newGameURL, sessionCookie, session, nil)
+	context = &testRequestContext{
+		requestType:   "GET",
+		requestURL:    host + newGameURL,
+		sessionCookie: sessionCookie, session: session, formVariables: nil,
+	}
+	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 
 	session, _ = sessionStore.Get(req, sessionCookieKey)
@@ -111,7 +129,11 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 
 	// FOURTH revisit Home and verify the "Rejoin Fleet!" @ gameUUID URL
-	res, req = prepareServeHTTP("GET", host+"/", sessionCookie, session, nil)
+	context = &testRequestContext{
+		requestType: "GET", requestURL: host + "/",
+		sessionCookie: sessionCookie, session: session, formVariables: nil,
+	}
+	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, sessErr = sessionStore.Get(req, sessionCookieKey)
 	if sessErr != nil {
@@ -125,7 +147,12 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 
 	// FIFTH visit "/games/__new__" and verify a new gameUUIDKey
-	res, req = prepareServeHTTP("GET", host+"/games/"+newGameUUID, sessionCookie, session, nil)
+	context = &testRequestContext{
+		requestType:   "GET",
+		requestURL:    host + "/games/" + newGameUUID,
+		sessionCookie: sessionCookie, session: session, formVariables: nil,
+	}
+	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, _ = sessionStore.Get(req, sessionCookieKey)
 	newGameURL = res.Header().Get("Location")
@@ -134,8 +161,13 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 
 	// SIXTH visit new game page and verify new gameUUID
-	formVariables = strings.NewReader("cmdrName=Tipsy")
-	res, req = prepareServeHTTP("POST", host+newGameURL, sessionCookie, session, formVariables)
+	context = &testRequestContext{
+		requestType:   "POST",
+		requestURL:    host + newGameURL,
+		sessionCookie: sessionCookie, session: session,
+		formVariables: strings.NewReader("cmdrName=Tipsy"),
+	}
+	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, _ = sessionStore.Get(req, sessionCookieKey)
 	gameUUIDNew := session.Values[gameUUIDKey].(string)
@@ -201,7 +233,12 @@ func TestWebSocketConnect(t *testing.T) {
 func TestVersion(t *testing.T) {
 	t.Parallel()
 
-	res, req := prepareServeHTTP("POST", host+"/version", "", nil, nil)
+	context := &testRequestContext{
+		requestType:   "POST",
+		requestURL:    host + "/version",
+		sessionCookie: "", session: nil, formVariables: nil,
+	}
+	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 
 	// Verify we get the build version id back
