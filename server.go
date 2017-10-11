@@ -108,10 +108,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		session.Values[gameUUIDKey] = newGameUUID
 	}
 
-	if e := session.Save(r, w); e != nil {
-		panic(e) // for now
-	}
-
 	render := render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: true,
