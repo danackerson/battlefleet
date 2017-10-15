@@ -1,0 +1,13 @@
+{
+    "name": "Battlefleet",
+    "icons": [
+        {
+            "src": "/android-chrome-192x192.png?v=GvkA0paLdM",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}
