@@ -54,6 +54,11 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		session.Values[gameUUIDKey] = newGameUUID
 	}
 
+	accountID := session.Values[accountIDKey]
+	if accountID != nil {
+		account := structures.GetAccount(session.Values[accountIDKey].(string))
+		session.Values[cmdrNameKey] = account.Commander
+	}
 	if e := session.Save(r, w); e != nil {
 		panic(e) // for now
 	}
