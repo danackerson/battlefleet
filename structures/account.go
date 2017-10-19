@@ -21,7 +21,7 @@ type Account struct {
 // NewAccount and session
 func NewAccount(username string) *Account {
 	account := Account{
-		ID:        uuid.NewV5(uuid.NamespaceOID, username).String(),
+		ID:        uuid.NewV5(uuid.NamespaceOID, username+time.Now().String()).String(),
 		Commander: username,
 		LastLogin: time.Now(),
 	}
