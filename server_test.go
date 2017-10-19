@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/danackerson/battlefleet/structures"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
@@ -105,9 +106,11 @@ func TestHome1Game1Home2(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	session, _ = sessionStore.Get(req, sessionCookieKey)
-	newGameURL := res.Header().Get("Location")
 	gameUUID := session.Values[gameUUIDKey].(string)
-	cmdrNamed := session.Values[cmdrNameKey].(string)
+	account := structures.GetAccount(session.Values[accountIDKey].(string))
+	cmdrNamed := account.Commander
+
+	newGameURL := res.Header().Get("Location")
 	if res.Code != 301 || cmdrNamed != "Shade" || !strings.Contains(newGameURL, gameUUID) {
 		t.Fatalf("Expecting redirect to /games/%s", gameUUID)
 	}
@@ -122,6 +125,10 @@ func TestHome1Game1Home2(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	session, _ = sessionStore.Get(req, sessionCookieKey)
+	account = structures.GetAccount(session.Values[accountIDKey].(string))
+	if len(account.Games) != 1 {
+		t.Fatalf("Expected only one game!")
+	}
 	act = res.Body.String()
 	if res.Code != 200 || !strings.Contains(act, "Engage!") {
 		log.Printf("%s\n", act)
@@ -136,6 +143,10 @@ func TestHome1Game1Home2(t *testing.T) {
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, sessErr = sessionStore.Get(req, sessionCookieKey)
+	account = structures.GetAccount(session.Values[accountIDKey].(string))
+	if len(account.Games) != 1 {
+		t.Fatalf("Expected no new games to be created!")
+	}
 	if sessErr != nil {
 		log.Printf("sessErr 3: %v\n", sessErr)
 	} else {
@@ -165,14 +176,13 @@ func TestHome1Game1Home2(t *testing.T) {
 		requestType:   "POST",
 		requestURL:    host + newGameURL,
 		sessionCookie: sessionCookie, session: session,
-		formVariables: strings.NewReader("cmdrName=Tipsy"),
 	}
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, _ = sessionStore.Get(req, sessionCookieKey)
 	gameUUIDNew := session.Values[gameUUIDKey].(string)
-	cmdrNamed = session.Values[cmdrNameKey].(string)
-	if gameUUIDNew == gameUUID || cmdrNamed != "Tipsy" {
+	account = structures.GetAccount(session.Values[accountIDKey].(string))
+	if gameUUIDNew == gameUUID || len(account.Games) != 2 {
 		t.Fatalf("Expected new gameUUID (%s)", gameUUIDNew)
 	}
 	act = res.Body.String()

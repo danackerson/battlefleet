@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -8,12 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/danackerson/battlefleet/structures"
 	"github.com/danackerson/battlefleet/websockets"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	uuid "github.com/satori/go.uuid"
 	"github.com/unrolled/render"
-	uuid "gopkg.in/myesui/uuid.v1"
 )
 
 // https://github.com/riscie/websocket-tic-tac-toe/ <= cool ideas
@@ -41,6 +43,47 @@ const errorPage = `
     Invalid game ID. Double check the ID or make a new game.<br/>
 `
 
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	session, _ := sessionStore.Get(r, sessionCookieKey)
+
+	if session.Values[cmdrNameKey] == nil {
+		session.Values[cmdrNameKey] = "stranger!"
+	}
+
+	if session.Values[gameUUIDKey] == nil {
+		session.Values[gameUUIDKey] = newGameUUID
+	}
+
+	render := render.New(render.Options{
+		Layout:        "content",
+		IsDevelopment: true,
+	})
+
+	gameInfo := GameInfo{
+		GameUUID:      template.JS(session.Values[gameUUIDKey].(string)),
+		Timestamp:     strconv.FormatInt(time.Now().UTC().UnixNano(), 10),
+		CommanderName: session.Values[cmdrNameKey].(string),
+	}
+	render.HTML(w, http.StatusOK, "home", gameInfo)
+}
+
+// VersionHandler now commented
+func versionHandler(w http.ResponseWriter, req *http.Request) {
+	buildURL := "https://circleci.com/gh/danackerson/battlefleet/" + version
+	v := map[string]string{"version": buildURL, "build": version}
+
+	data, _ := json.Marshal(v)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	w.Write(data)
+}
+
+func loginHander(w http.ResponseWriter, r *http.Request) {
+	// https://manage.auth0.com/#/ => Github account
+	// https://manage.auth0.com/#/clients/Zz58wpKP7ApF0Pw6KGxE35XYecf2sCEO/quickstart => Go
+	// https://auth0.com/blog/vuejs2-authentication-tutorial/
+}
+
 func gameHandler(w http.ResponseWriter, r *http.Request) {
 	requestParams := mux.Vars(r)
 	parseErr := r.ParseForm()
@@ -48,32 +91,53 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(parseErr)
 	}
 
-	session, _ := sessionStore.Get(r, sessionCookieKey)
-	if r.FormValue("cmdrName") != "" {
-		session.Values[cmdrNameKey] = r.FormValue("cmdrName")
+	session, sessionErr := sessionStore.Get(r, sessionCookieKey)
+	if sessionErr != nil {
+		panic(sessionErr)
+	}
+
+	accountID := ""
+	if session.Values[accountIDKey] != nil {
+		accountID = session.Values[accountIDKey].(string)
+	}
+
+	var account *structures.Account
+	if accountID == "" {
+		if r.FormValue("cmdrName") == "" {
+			// new accounts require a CommanderName
+			t, _ := template.New("errorPage").Parse(errorPage)
+			t.Execute(w, nil)
+			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
+			return
+		}
+
+		account = structures.NewAccount(r.FormValue("cmdrName"))
+		session.Values[accountIDKey] = account.ID
 		if e := session.Save(r, w); e != nil {
 			panic(e) // for now
 		}
+	} else {
+		account = structures.GetAccount(accountID)
 	}
-	gameUUID := session.Values[gameUUIDKey]
+	gameUUID := session.Values[gameUUIDKey].(string)
 
-	// TODO: test with new Gorilla sessions!
 	// they come in without a cookie or request a gameID that doesn't match their own
-	if requestParams["id"] != newGameUUID && gameUUID != requestParams["id"] {
+	if requestParams["gameid"] != newGameUUID && gameUUID != requestParams["gameid"] {
 		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, nil)
 		http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 		return
 	}
 
-	if requestParams["id"] == newGameUUID || gameUUID == nil {
-		// TODO: if __new__ but they have a gameUUID perhaps warn they are about to lose their game?
+	if requestParams["gameid"] == newGameUUID || gameUUID == "" {
 		sessionIDHash := session.ID + time.Now().String()
-		session.Values[gameUUIDKey] = uuid.NewV5(uuid.NameSpaceOID, sessionIDHash).String()
+		gameUUID = uuid.NewV5(uuid.NamespaceOID, sessionIDHash).String()
+		account.AddGame(structures.NewGame(gameUUID, account.ID))
+		session.Values[gameUUIDKey] = gameUUID
 		if e := session.Save(r, w); e != nil {
 			panic(e) // for now
 		}
-		http.Redirect(w, r, "/games/"+session.Values[gameUUIDKey].(string), http.StatusMovedPermanently)
+		http.Redirect(w, r, "/games/"+gameUUID, http.StatusMovedPermanently)
 		return
 	}
 
@@ -85,8 +149,8 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: use for saving the gameState to MongoDB (mlab.com)
 	gameInfo := GameInfo{
 		Timestamp:     strconv.FormatInt(time.Now().UTC().UnixNano(), 10),
-		GameUUID:      template.JS(gameUUID.(string)),
-		CommanderName: session.Values[cmdrNameKey].(string),
+		GameUUID:      template.JS(gameUUID),
+		CommanderName: account.Commander,
 	}
 
 	render.HTML(w, http.StatusOK, "game", gameInfo)

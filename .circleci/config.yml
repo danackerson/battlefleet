@@ -13,6 +13,7 @@ jobs:
           command: |
             apk add -U jq curl openssh-client build-base git
 
+            # https://download.docker.com/linux/static/stable/x86_64/
             VER="17.09.0"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
 
