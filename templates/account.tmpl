@@ -1,0 +1,19 @@
+<script type="text/javascript" src="/js/vuejs-dialog.min.js"></script>
+<script>
+// Tell Vue to install the plugin.
+window.Vue.use(VuejsDialog)
+this.$dialog.confirm('Please confirm to continue')
+	.then(function () {
+		console.log('Clicked on proceed')
+	})
+	.catch(function () {
+		console.log('Clicked on cancel')
+	});
+</script>
+
+
+<p>Welcome, {{ .Commander }} ({{ .ID }})</p>
+Manage Games:<br/>
+<form method="post" action="/accounts/{{ .ClickableID }}?action=delete">
+  <button type="submit" v-confirm="">Delete Account?</button>
+</form>

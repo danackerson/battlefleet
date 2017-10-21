@@ -67,7 +67,7 @@ func prepareServeHTTP(context *testRequestContext) (*httptest.ResponseRecorder, 
 func TestHome1Game1Home2(t *testing.T) {
 	t.Parallel()
 
-	sessionCookie := ""
+	sessionCookie := "" // comment
 
 	// FIRST homepage visit - no session
 	context := &testRequestContext{
@@ -107,7 +107,7 @@ func TestHome1Game1Home2(t *testing.T) {
 
 	session, _ = sessionStore.Get(req, sessionCookieKey)
 	gameUUID := session.Values[gameUUIDKey].(string)
-	account := structures.GetAccount(session.Values[accountIDKey].(string))
+	account := session.Values[accountKey].(*structures.Account)
 	cmdrNamed := account.Commander
 
 	newGameURL := res.Header().Get("Location")
@@ -125,7 +125,7 @@ func TestHome1Game1Home2(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	session, _ = sessionStore.Get(req, sessionCookieKey)
-	account = structures.GetAccount(session.Values[accountIDKey].(string))
+	account = session.Values[accountKey].(*structures.Account)
 	if len(account.Games) != 1 {
 		t.Fatalf("Expected only one game!")
 	}
@@ -143,7 +143,7 @@ func TestHome1Game1Home2(t *testing.T) {
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, sessErr = sessionStore.Get(req, sessionCookieKey)
-	account = structures.GetAccount(session.Values[accountIDKey].(string))
+	account = session.Values[accountKey].(*structures.Account)
 	if len(account.Games) != 1 {
 		t.Fatalf("Expected no new games to be created!")
 	}
@@ -181,7 +181,7 @@ func TestHome1Game1Home2(t *testing.T) {
 	router.ServeHTTP(res, req)
 	session, _ = sessionStore.Get(req, sessionCookieKey)
 	gameUUIDNew := session.Values[gameUUIDKey].(string)
-	account = structures.GetAccount(session.Values[accountIDKey].(string))
+	account = session.Values[accountKey].(*structures.Account)
 	if gameUUIDNew == gameUUID || len(account.Games) != 2 {
 		t.Fatalf("Expected new gameUUID (%s)", gameUUIDNew)
 	}

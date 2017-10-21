@@ -43,6 +43,22 @@ const errorPage = `
     Invalid game ID. Double check the ID or make a new game.<br/>
 `
 
+func accountHandler(w http.ResponseWriter, r *http.Request) {
+	var account *structures.Account
+
+	session, _ := sessionStore.Get(r, sessionCookieKey)
+	if session.Values[accountKey] != nil {
+		account = session.Values[accountKey].(*structures.Account)
+	}
+
+	render := render.New(render.Options{
+		Layout:        "content",
+		IsDevelopment: true,
+	})
+
+	render.HTML(w, http.StatusOK, "account", *account)
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := sessionStore.Get(r, sessionCookieKey)
 
@@ -54,9 +70,9 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		session.Values[gameUUIDKey] = newGameUUID
 	}
 
-	accountID := session.Values[accountIDKey]
-	if accountID != nil {
-		account := structures.GetAccount(session.Values[accountIDKey].(string))
+	// retrieve account
+	if session.Values[accountKey] != nil {
+		account := session.Values[accountKey].(*structures.Account)
 		session.Values[cmdrNameKey] = account.Commander
 	}
 	if e := session.Save(r, w); e != nil {
@@ -105,13 +121,8 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 		panic(sessionErr)
 	}
 
-	accountID := ""
-	if session.Values[accountIDKey] != nil {
-		accountID = session.Values[accountIDKey].(string)
-	}
-
-	var account *structures.Account
-	if accountID == "" {
+	account := &structures.Account{}
+	if session.Values[accountKey] == nil {
 		if r.FormValue("cmdrName") == "" {
 			// new accounts require a CommanderName
 			t, _ := template.New("errorPage").Parse(errorPage)
@@ -121,12 +132,9 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		account = structures.NewAccount(r.FormValue("cmdrName"))
-		session.Values[accountIDKey] = account.ID
-		if e := session.Save(r, w); e != nil {
-			panic(e) // for now
-		}
+		session.Values[accountKey] = account
 	} else {
-		account = structures.GetAccount(accountID)
+		account = session.Values[accountKey].(*structures.Account)
 	}
 	gameUUID := session.Values[gameUUIDKey].(string)
 
@@ -141,7 +149,9 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 	if requestParams["gameid"] == newGameUUID || gameUUID == "" {
 		sessionIDHash := session.ID + time.Now().String()
 		gameUUID = uuid.NewV5(uuid.NamespaceOID, sessionIDHash).String()
-		account.AddGame(structures.NewGame(gameUUID, account.ID))
+		newGame := structures.NewGame(gameUUID, account.ID)
+		account.AddGame(newGame)
+		session.Values[accountKey] = account
 		session.Values[gameUUIDKey] = gameUUID
 		if e := session.Save(r, w); e != nil {
 			panic(e) // for now

@@ -1,6 +1,7 @@
 package structures
 
 import (
+	"html/template"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -10,20 +11,25 @@ var onlineAccounts []*Account
 
 // Account object representing a user account
 type Account struct {
-	ID         string // unique
-	Auth0ID    string // if nil, not a registered user: no persistence
-	Commander  string
-	Games      []Game
-	LastLogout time.Time
-	LastLogin  time.Time
+	ID          string // unique
+	Auth0ID     string // if nil, not a registered user: no persistence
+	Commander   string
+	Games       []*Game
+	LastLogout  time.Time
+	LastLogin   time.Time
+	ClickableID template.JS
 }
 
 // NewAccount and session
 func NewAccount(username string) *Account {
+	id := uuid.NewV5(uuid.NamespaceOID, username+time.Now().String()).String()
 	account := Account{
-		ID:        uuid.NewV5(uuid.NamespaceOID, username+time.Now().String()).String(),
-		Commander: username,
-		LastLogin: time.Now(),
+		ID:          id,
+		Auth0ID:     "",
+		Commander:   username,
+		LastLogin:   time.Now(),
+		LastLogout:  time.Now(),
+		ClickableID: template.JS(id),
 	}
 
 	onlineAccounts = append(onlineAccounts, &account)
@@ -34,12 +40,12 @@ func NewAccount(username string) *Account {
 // AddGame to an account
 func (account *Account) AddGame(game *Game) {
 	// TODO: max 3 games per account!
-	account.Games = append(account.Games, *game)
+	account.Games = append(account.Games, game)
 }
 
 // GetAccount finds the account among the online sessions
 func GetAccount(accountID string) *Account {
-	var account *Account
+	account := &Account{}
 	for _, accountToCheck := range onlineAccounts {
 		if accountToCheck.ID == accountID {
 			account = accountToCheck
@@ -47,11 +53,7 @@ func GetAccount(accountID string) *Account {
 		}
 	}
 
-	if account == nil {
-		// TODO: go search in MongoDB!
-		// & add to online sessions
-	}
-
+	// if account == nil => TODO: go search in MongoDB?
 	return account
 }
 

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/gob"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/danackerson/battlefleet/structures"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/urfave/negroni"
@@ -13,7 +15,8 @@ import (
 var prodSession = false
 var httpPort = ":8083"
 var sessionCookieKey = "battlefleetID"
-var accountIDKey = "accountID"
+var accountIDKey = "ownerAccountID"
+var accountKey = "ownerAccount"
 var cmdrNameKey = "cmdrName"
 var gameUUIDKey = "gameUUID"
 var newGameUUID = "__new__"
@@ -37,6 +40,10 @@ func main() {
 }
 
 func parseEnvVariables() {
+	gob.Register(&structures.Account{})
+	gob.Register(&structures.Game{})
+	gob.Register(&structures.Ship{})
+
 	prodSession, _ = strconv.ParseBool(os.Getenv("prodSession"))
 	sessionStore = sessions.NewFilesystemStore("/tmp", []byte(os.Getenv("bfSecret")))
 
@@ -82,6 +89,7 @@ func setupMongoDBSessionStore(mongoDBUser string, mongoDBPass string, mongoDBHos
 func setUpMuxHandlers(router *mux.Router) {
 	router.HandleFunc("/", homeHandler)
 	router.HandleFunc("/games/{gameid}", gameHandler).Name("games")
+	router.HandleFunc("/account/", accountHandler)
 	router.HandleFunc("/wsInit", serveWebSocket)
 	router.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {

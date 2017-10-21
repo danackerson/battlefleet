@@ -1,16 +1,15 @@
 package structures
 
 import (
-	"github.com/bmatsuo/hexgrid/point"
-	uuid "gopkg.in/myesui/uuid.v1"
+	"github.com/danackerson/battlefleet/hexgrid"
 )
 
 // Ship object representing finite state of ship
 type Ship struct {
-	ID         uuid.UUID
-	Owner      uuid.UUID // Account.ID or Player2.ID => nil for Server ship (NPC)
+	ID         string
+	Owner      string // Account.ID or Player2.ID => nil for Server ship (NPC)
 	Name       string
-	Position   point.Point
+	Position   hexgrid.Point
 	Crystals   uint32 // 0 means no firing/movement
 	GunPower   uint32 // can be upgraded at Bases
 	HullDamage int8   // 100% means no movement
