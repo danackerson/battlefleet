@@ -11,19 +11,20 @@ var onlineAccounts []*Account
 
 // Account object representing a user account
 type Account struct {
-	ID          string // unique
-	Auth0ID     string // if nil, not a registered user: no persistence
-	Commander   string
-	Games       []*Game
-	LastLogout  time.Time
-	LastLogin   time.Time
-	ClickableID template.JS
+	ID            string // unique
+	Auth0ID       string // if nil, not a registered user: no persistence
+	Commander     string
+	Games         []*Game // max 3
+	CurrentGameID string
+	LastLogout    time.Time
+	LastLogin     time.Time
+	ClickableID   template.JS
 }
 
 // NewAccount and session
 func NewAccount(username string) *Account {
 	id := uuid.NewV5(uuid.NamespaceOID, username+time.Now().String()).String()
-	account := Account{
+	account := &Account{
 		ID:          id,
 		Auth0ID:     "",
 		Commander:   username,
@@ -32,14 +33,26 @@ func NewAccount(username string) *Account {
 		ClickableID: template.JS(id),
 	}
 
-	onlineAccounts = append(onlineAccounts, &account)
+	onlineAccounts = append(onlineAccounts, account)
 
-	return &account
+	return account
+}
+
+func (account *Account) AccountOwnsGame(gameID string) bool {
+	owns := false
+	for _, game := range account.Games {
+		if game.ID == gameID {
+			owns = true
+			break
+		}
+	}
+
+	return owns
 }
 
 // AddGame to an account
 func (account *Account) AddGame(game *Game) {
-	// TODO: max 3 games per account!
+	account.CurrentGameID = game.ID
 	account.Games = append(account.Games, game)
 }
 
@@ -75,7 +88,6 @@ func (account Account) EndSession() {
 	account.LastLogout = time.Now()
 	removeAccountFromActiveSessions(account)
 
-	// TODO
 	if account.Auth0ID != "" {
 		// persist games owned by this account!
 	}
@@ -85,7 +97,6 @@ func (account Account) EndSession() {
 func (account Account) DeleteAccount() {
 	removeAccountFromActiveSessions(account)
 
-	// TODO
 	if account.Auth0ID != "" {
 		// delete Auth0 account
 		// delete MongoDB games owned by this account

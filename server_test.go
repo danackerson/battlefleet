@@ -22,6 +22,7 @@ var router = mux.NewRouter()
 func init() {
 	parseEnvVariables()
 	setUpMuxHandlers(router)
+	setUpFuncMaps()
 }
 
 type testRequestContext struct {

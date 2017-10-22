@@ -11,9 +11,13 @@ this.$dialog.confirm('Please confirm to continue')
 	});
 </script>
 
+TODO: Show individual Game stats along with Delete button
 
-<p>Welcome, {{ .Commander }} ({{ .ID }})</p>
-Manage Games:<br/>
+<p>Welcome, <a href="/">{{ .Commander }}</a></p>
+{{ $current_game_id := .CurrentGameID }}
+{{ range $key, $game := .Games }}
+<p>Game <a href="/games/{{$game.ID}}">#{{ inc $key }}</a>{{ if eq $current_game_id $game.ID }} <= current{{ end }}</p>
+{{ end }}
 <form method="post" action="/accounts/{{ .ClickableID }}?action=delete">
-  <button type="submit" v-confirm="">Delete Account?</button>
+  <button class="dialog" type="submit" v-confirm="javascript:alert('yes/no?');">Delete Account?</button>
 </form>

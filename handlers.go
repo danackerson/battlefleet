@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 )
 
 // https://github.com/riscie/websocket-tic-tac-toe/ <= cool ideas
-// TODO store an array of sessions
 
 // GameInfo is now commented
 type GameInfo struct {
@@ -43,6 +41,19 @@ const errorPage = `
     Invalid game ID. Double check the ID or make a new game.<br/>
 `
 
+var funcMap template.FuncMap
+
+func setUpFuncMaps() {
+	funcMap = template.FuncMap{
+		"inc": func(i int) int {
+			return i + 1
+		},
+		"curr_time": func() int64 {
+			return time.Now().Unix()
+		},
+	}
+}
+
 func accountHandler(w http.ResponseWriter, r *http.Request) {
 	var account *structures.Account
 
@@ -54,6 +65,7 @@ func accountHandler(w http.ResponseWriter, r *http.Request) {
 	render := render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: true,
+		Funcs:         []template.FuncMap{funcMap},
 	})
 
 	render.HTML(w, http.StatusOK, "account", *account)
@@ -70,10 +82,10 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		session.Values[gameUUIDKey] = newGameUUID
 	}
 
+	account := &structures.Account{}
 	// retrieve account
 	if session.Values[accountKey] != nil {
-		account := session.Values[accountKey].(*structures.Account)
-		session.Values[cmdrNameKey] = account.Commander
+		account = session.Values[accountKey].(*structures.Account)
 	}
 	if e := session.Save(r, w); e != nil {
 		panic(e) // for now
@@ -82,14 +94,10 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	render := render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: true,
+		Funcs:         []template.FuncMap{funcMap},
 	})
 
-	gameInfo := GameInfo{
-		GameUUID:      template.JS(session.Values[gameUUIDKey].(string)),
-		Timestamp:     strconv.FormatInt(time.Now().UTC().UnixNano(), 10),
-		CommanderName: session.Values[cmdrNameKey].(string),
-	}
-	render.HTML(w, http.StatusOK, "home", gameInfo)
+	render.HTML(w, http.StatusOK, "home", account)
 }
 
 // VersionHandler now commented
@@ -136,14 +144,24 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		account = session.Values[accountKey].(*structures.Account)
 	}
-	gameUUID := session.Values[gameUUIDKey].(string)
+	gameUUID := requestParams["gameid"]
 
 	// they come in without a cookie or request a gameID that doesn't match their own
-	if requestParams["gameid"] != newGameUUID && gameUUID != requestParams["gameid"] {
-		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, nil)
-		http.Redirect(w, r, "/", http.StatusPreconditionRequired)
-		return
+	if gameUUID != newGameUUID {
+		if account.AccountOwnsGame(requestParams["gameid"]) {
+			gameUUID = requestParams["gameid"]
+			account.CurrentGameID = gameUUID
+			//session.Values[accountKey] = account
+			session.Values[gameUUIDKey] = gameUUID
+			if e := session.Save(r, w); e != nil {
+				panic(e) // for now
+			}
+		} else {
+			t, _ := template.New("errorPage").Parse(errorPage)
+			t.Execute(w, nil)
+			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
+			return
+		}
 	}
 
 	if requestParams["gameid"] == newGameUUID || gameUUID == "" {
@@ -163,16 +181,10 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 	render := render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: true,
+		Funcs:         []template.FuncMap{funcMap},
 	})
 
-	// TODO: use for saving the gameState to MongoDB (mlab.com)
-	gameInfo := GameInfo{
-		Timestamp:     strconv.FormatInt(time.Now().UTC().UnixNano(), 10),
-		GameUUID:      template.JS(gameUUID),
-		CommanderName: account.Commander,
-	}
-
-	render.HTML(w, http.StatusOK, "game", gameInfo)
+	render.HTML(w, http.StatusOK, "game", account)
 }
 
 var upgrader = websocket.Upgrader{

@@ -1,6 +1,6 @@
 <div id="app">
-  <p>Go <a href="/" style="color:white;">home</a></p>
-  <p>Welcome, {{ .CommanderName }}</p>
+  <p>Go <a href="/">home</a></p>
+  <p>Welcome, <a href="/account/">{{ .Commander }}</a></p>
 
   <div v-if="connectionState != 'OPEN'">
     <button onclick="connectServer();">Engage!</button>

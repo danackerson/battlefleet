@@ -33,6 +33,7 @@ func main() {
 
 	router := mux.NewRouter()
 	setUpMuxHandlers(router)
+	setUpFuncMaps()
 	n := negroni.Classic()
 	n.UseHandler(router)
 
@@ -46,6 +47,7 @@ func parseEnvVariables() {
 
 	prodSession, _ = strconv.ParseBool(os.Getenv("prodSession"))
 	sessionStore = sessions.NewFilesystemStore("/tmp", []byte(os.Getenv("bfSecret")))
+	sessionStore.MaxLength(32 * 1024) // else securecookie: value too long error
 
 	if !prodSession {
 		maxAge := 7 * 24 * 3600 // 1 week
