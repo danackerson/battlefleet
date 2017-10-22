@@ -2,6 +2,15 @@ var wsApp;
 
 var userDisconnect = false;
 
+function confirmAccountDeletion(cmdrName) {
+    var confirm = prompt("Are you sure you want to DELETE your account?", "Retype your Commander Name to confirm...");
+    if (confirm == cmdrName) {
+      window.location.href = "/account/?action=delete";
+    } else {
+      alert(confirm + " is NOT " + cmdrName + ". Try again!");
+    }
+}
+
 function disconnectServer() {
   userDisconnect = true;
   wsApp.$data.ws.close();

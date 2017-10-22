@@ -1,6 +1,6 @@
 {{ if eq .CurrentGameID "__new__" }}
 <p>Welcome, {{ .Commander }}</p>
-<form action="/games/{{ .CurrentGameID }}?ts={{ .Timestamp }}" method="post">
+<form action="/games/{{ .CurrentGameID }}?ts={{ curr_time }}" method="post">
   Name: <input type="text" name="cmdrName" required>
   <input type="submit" value="New game!" />
 </form>

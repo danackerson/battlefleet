@@ -6,6 +6,8 @@ import (
 	"github.com/danackerson/battlefleet/hexgrid"
 )
 
+var NewGameUUID = "__new__"
+
 // Game object representing finite game state
 type Game struct {
 	ID         string // unique

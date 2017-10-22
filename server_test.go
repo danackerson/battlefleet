@@ -49,7 +49,7 @@ func prepareServeHTTP(context *testRequestContext) (*httptest.ResponseRecorder, 
 
 	if context.session == nil {
 		context.session, _ = sessionStore.Get(req, sessionCookieKey)
-		context.session.Values[gameUUIDKey] = newGameUUID
+		context.session.Values[gameUUIDKey] = structures.NewGameUUID
 	}
 
 	if e := context.session.Save(req, res); e != nil {
@@ -161,7 +161,7 @@ func TestHome1Game1Home2(t *testing.T) {
 	// FIFTH visit "/games/__new__" and verify a new gameUUIDKey
 	context = &testRequestContext{
 		requestType:   "GET",
-		requestURL:    host + "/games/" + newGameUUID,
+		requestURL:    host + "/games/" + structures.NewGameUUID,
 		sessionCookie: sessionCookie, session: session, formVariables: nil,
 	}
 	res, req = prepareServeHTTP(context)
@@ -190,6 +190,12 @@ func TestHome1Game1Home2(t *testing.T) {
 	if res.Code != 200 || !strings.Contains(act, "Engage!") {
 		log.Printf("%s\n", act)
 		t.Fatalf("Expected working game page but didn't get it (%d)", res.Code)
+	}
+
+	// delete session as teardown
+	session.Options.MaxAge = -1
+	if e := session.Save(req, res); e != nil {
+		panic(e) // for now
 	}
 }
 
@@ -247,7 +253,7 @@ func TestVersion(t *testing.T) {
 	context := &testRequestContext{
 		requestType:   "POST",
 		requestURL:    host + "/version",
-		sessionCookie: "", session: nil, formVariables: nil,
+		sessionCookie: "cook", session: nil, formVariables: nil,
 	}
 	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
@@ -257,5 +263,10 @@ func TestVersion(t *testing.T) {
 	act := res.Body.String()
 	if !strings.Contains(act, exp) {
 		t.Fatalf("Expected %s got %s", exp, act)
+	}
+
+	context.session.Options.MaxAge = -1
+	if e := context.session.Save(req, res); e != nil {
+		panic(e) // for now
 	}
 }

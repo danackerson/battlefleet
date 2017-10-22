@@ -56,12 +56,22 @@ func setUpFuncMaps() {
 
 func accountHandler(w http.ResponseWriter, r *http.Request) {
 	var account *structures.Account
-
 	session, _ := sessionStore.Get(r, sessionCookieKey)
 	if session.Values[accountKey] != nil {
 		account = session.Values[accountKey].(*structures.Account)
 	}
 
+	requestParams := r.URL.Query()
+	if len(requestParams) > 0 && requestParams["action"][0] == "delete" {
+		account.DeleteAccount()
+		session.Options.MaxAge = -1
+		if e := session.Save(r, w); e != nil {
+			panic(e) // for now
+		}
+		// Session Flash msg "Account deleted"
+		http.Redirect(w, r, "/?account=deleted", http.StatusTemporaryRedirect)
+		return
+	}
 	render := render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: true,
@@ -79,10 +89,10 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if session.Values[gameUUIDKey] == nil {
-		session.Values[gameUUIDKey] = newGameUUID
+		session.Values[gameUUIDKey] = structures.NewGameUUID
 	}
 
-	account := &structures.Account{}
+	account := structures.NewAccount(session.Values[cmdrNameKey].(string))
 	// retrieve account
 	if session.Values[accountKey] != nil {
 		account = session.Values[accountKey].(*structures.Account)
@@ -147,7 +157,7 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 	gameUUID := requestParams["gameid"]
 
 	// they come in without a cookie or request a gameID that doesn't match their own
-	if gameUUID != newGameUUID {
+	if gameUUID != structures.NewGameUUID {
 		if account.AccountOwnsGame(requestParams["gameid"]) {
 			gameUUID = requestParams["gameid"]
 			account.CurrentGameID = gameUUID
@@ -164,7 +174,7 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if requestParams["gameid"] == newGameUUID || gameUUID == "" {
+	if requestParams["gameid"] == structures.NewGameUUID || gameUUID == "" {
 		sessionIDHash := session.ID + time.Now().String()
 		gameUUID = uuid.NewV5(uuid.NamespaceOID, sessionIDHash).String()
 		newGame := structures.NewGame(gameUUID, account.ID)

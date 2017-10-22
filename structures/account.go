@@ -25,12 +25,13 @@ type Account struct {
 func NewAccount(username string) *Account {
 	id := uuid.NewV5(uuid.NamespaceOID, username+time.Now().String()).String()
 	account := &Account{
-		ID:          id,
-		Auth0ID:     "",
-		Commander:   username,
-		LastLogin:   time.Now(),
-		LastLogout:  time.Now(),
-		ClickableID: template.JS(id),
+		ID:            id,
+		Auth0ID:       "",
+		CurrentGameID: NewGameUUID,
+		Commander:     username,
+		LastLogin:     time.Now(),
+		LastLogout:    time.Now(),
+		ClickableID:   template.JS(id),
 	}
 
 	onlineAccounts = append(onlineAccounts, account)

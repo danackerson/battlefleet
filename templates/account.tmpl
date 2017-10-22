@@ -1,16 +1,3 @@
-<script type="text/javascript" src="/js/vuejs-dialog.min.js"></script>
-<script>
-// Tell Vue to install the plugin.
-window.Vue.use(VuejsDialog)
-this.$dialog.confirm('Please confirm to continue')
-	.then(function () {
-		console.log('Clicked on proceed')
-	})
-	.catch(function () {
-		console.log('Clicked on cancel')
-	});
-</script>
-
 TODO: Show individual Game stats along with Delete button
 
 <p>Welcome, <a href="/">{{ .Commander }}</a></p>
@@ -18,6 +5,5 @@ TODO: Show individual Game stats along with Delete button
 {{ range $key, $game := .Games }}
 <p>Game <a href="/games/{{$game.ID}}">#{{ inc $key }}</a>{{ if eq $current_game_id $game.ID }} <= current{{ end }}</p>
 {{ end }}
-<form method="post" action="/accounts/{{ .ClickableID }}?action=delete">
-  <button class="dialog" type="submit" v-confirm="javascript:alert('yes/no?');">Delete Account?</button>
-</form>
+
+<button onclick="confirmAccountDeletion('{{ .Commander }}')">Delete Account?</button>

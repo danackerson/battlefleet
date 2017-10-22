@@ -19,7 +19,6 @@ var accountIDKey = "ownerAccountID"
 var accountKey = "ownerAccount"
 var cmdrNameKey = "cmdrName"
 var gameUUIDKey = "gameUUID"
-var newGameUUID = "__new__"
 var mongoDBUser string
 var mongoDBPass string
 var mongoDBHost string
