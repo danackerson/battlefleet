@@ -1,9 +1,68 @@
-TODO: Show individual Game stats along with Delete button
+<style>
+#container {
+    width:100%;
+    text-align:center;
+}
+#left {
+    float:left;
+    width:100px;
+}
+#center {
+    display: inline-block;
+    margin:0 auto;
+    width:100px;
+}
+#right {
+    float:right;
+    width:100px;
+}
+</style>
 
-<p>Welcome, <a href="/">{{ .Commander }}</a></p>
+<p>Welcome, <a href="/" style="padding-right:95px;">{{ .Commander }}</a>
+  <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Commander }}')">Delete Account?</button>
+</p>
 {{ $current_game_id := .CurrentGameID }}
+<div id="container">
 {{ range $key, $game := .Games }}
-<p>Game <a href="/games/{{$game.ID}}">#{{ inc $key }}</a>{{ if eq $current_game_id $game.ID }} <= current{{ end }}</p>
+{{ $div_id := "left" }}
+{{ if eq $key 2 }}
+{{ $div_id := "right" }}
 {{ end }}
-
-<button onclick="confirmAccountDeletion('{{ .Commander }}')">Delete Account?</button>
+{{ if eq $key 3 }}
+{{ $div_id := "center" }}
+{{ end }}
+<div id="{{ $div_id }}" style="width:250px;">
+   <fieldset>
+      <legend style="color:orange;font-weight:bold;">Game <a href="/games/{{$game.ID}}">#{{ inc $key }}</a>{{ if eq $current_game_id $game.ID }} <= current{{ end }}</legend>
+      <table>
+         <tr>
+            <td><span style="text-decoration:underline">Last turn:</span></td>
+            <td><span>{{ $game.LastTurn.Format "02-01-2006 15:04:05" }}</span></td>
+         </tr>
+         <tr>
+            <td><span style="text-decoration:underline">Ships:</span></td>
+            <td><span>{{ len $game.Ships}}</span></td>
+         </tr>
+         <tr>
+            <td><span style="text-decoration:underline">Credits:</span></td>
+            <td><span>{{ $game.Credits}}</span></td>
+         </tr>
+         <tr>
+            <td><span style="text-decoration:underline">Glory:</span></td>
+            <td><span>{{ $game.Glory}}</span></td>
+         </tr>
+         <tr>
+            <td><span style="text-decoration:underline">Your turn:</span></td>
+            <td><span>{{ $game.ServerTurn }}</span></td>
+         </tr>
+         <tr>
+            <td><span style="text-decoration:underline">Online:</span></td>
+            <td><span>{{ $game.Online }}</span></td>
+         </tr>
+      </table>
+      <br/>
+      <button style="background-color:orange;color:white;border-radius:8px;" onclick="confirmGameDeletion({{$game.ID}});">Delete Game?</button>
+   </fieldset>
+</div>
+<p></p>
+{{ end }}

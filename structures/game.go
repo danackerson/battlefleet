@@ -1,24 +1,27 @@
 package structures
 
 import (
+	"html/template"
 	"time"
 
 	"github.com/danackerson/battlefleet/hexgrid"
 )
 
+// NewGameUUID is the default value for creating a new game
 var NewGameUUID = "__new__"
 
 // Game object representing finite game state
 type Game struct {
-	ID         string // unique
-	Owner      string // Account.ID of owning user -> nil == NPC ship
-	LastTurn   time.Time
-	Ships      []*Ship
-	Map        *hexgrid.Grid
-	Credits    uint32
-	Glory      int16
-	ServerTurn bool
-	Online     bool
+	ID          string // unique
+	Owner       string // Account.ID of owning user -> nil == NPC ship
+	LastTurn    time.Time
+	Ships       []*Ship
+	Map         *hexgrid.Grid
+	Credits     uint32
+	Glory       int16
+	ServerTurn  bool
+	Online      bool
+	ClickableID template.JS
 	//Player2 uuid.UUID // Account.UUID of 2nd participating user
 	//Player2IsFriend bool // false == foe (can attack Owner)
 }
@@ -44,15 +47,16 @@ func NewGame(gameID string, ownerID string) *Game {
 	grid := hexgrid.MakeGrid(hexgrid.OrientationFlat, center, size)
 
 	game := Game{
-		ID:         gameID,
-		Owner:      ownerID,
-		Online:     true,
-		Credits:    2000,
-		Glory:      0,
-		ServerTurn: false,
-		Map:        grid,
-		Ships:      []*Ship{ship},
-		LastTurn:   time.Now(),
+		ID:          gameID,
+		ClickableID: template.JS(gameID),
+		Owner:       ownerID,
+		Online:      true,
+		Credits:     2000,
+		Glory:       0,
+		ServerTurn:  false,
+		Map:         grid,
+		Ships:       []*Ship{ship},
+		LastTurn:    time.Now(),
 	}
 
 	//spew.Dump(game.Map)

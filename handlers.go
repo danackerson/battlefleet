@@ -12,6 +12,7 @@ import (
 	"github.com/danackerson/battlefleet/websockets"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 	uuid "github.com/satori/go.uuid"
 	"github.com/unrolled/render"
@@ -38,7 +39,8 @@ const errorPage = `
 		<link rel="icon" href="/images/wormhole.png">
   </head>
   <body>
-    Invalid game ID. Double check the ID or make a new game.<br/>
+    Invalid game ID or Commander name.<br/>
+		Double check the ID or choose a different name to make a <a href="/">new game</a>.
 `
 
 var funcMap template.FuncMap
@@ -97,9 +99,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	if session.Values[accountKey] != nil {
 		account = session.Values[accountKey].(*structures.Account)
 	}
-	if e := session.Save(r, w); e != nil {
-		panic(e) // for now
-	}
 
 	render := render.New(render.Options{
 		Layout:        "content",
@@ -139,29 +138,47 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 		panic(sessionErr)
 	}
 
-	account := &structures.Account{}
-	if session.Values[accountKey] == nil {
-		if r.FormValue("cmdrName") == "" {
-			// new accounts require a CommanderName
-			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, nil)
-			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
-			return
-		}
+	account := getAccount(r, w, session)
+	if account != nil {
+		gameUUID := requestParams["gameid"]
+		redirected := setupGame(r, w, session, account, gameUUID)
 
-		account = structures.NewAccount(r.FormValue("cmdrName"))
-		session.Values[accountKey] = account
-	} else {
-		account = session.Values[accountKey].(*structures.Account)
+		if !redirected {
+			queryParams := r.URL.Query()
+			if len(queryParams) > 0 && queryParams["action"][0] == "delete" {
+				account.DeleteGame(gameUUID)
+				if session.Values[gameUUIDKey] == gameUUID {
+					session.Values[gameUUIDKey] = ""
+				}
+				// remember, the session *is* the persistence store
+				// a new request will fetch the account from the session on disk
+				// so deleting a game is not really Deleted until the session is saved!
+				if e := session.Save(r, w); e != nil {
+					panic(e) // for now
+				}
+				http.Redirect(w, r, "/account/", http.StatusTemporaryRedirect)
+				return
+			}
+
+			render := render.New(render.Options{
+				Layout:        "content",
+				IsDevelopment: true,
+				Funcs:         []template.FuncMap{funcMap},
+			})
+
+			render.HTML(w, http.StatusOK, "game", account)
+		}
 	}
-	gameUUID := requestParams["gameid"]
+}
+
+func setupGame(r *http.Request, w http.ResponseWriter,
+	session *sessions.Session, account *structures.Account, gameUUID string) bool {
+	redirected := false
 
 	// they come in without a cookie or request a gameID that doesn't match their own
 	if gameUUID != structures.NewGameUUID {
-		if account.AccountOwnsGame(requestParams["gameid"]) {
-			gameUUID = requestParams["gameid"]
+		if account.OwnsGame(gameUUID) {
 			account.CurrentGameID = gameUUID
-			//session.Values[accountKey] = account
 			session.Values[gameUUIDKey] = gameUUID
 			if e := session.Save(r, w); e != nil {
 				panic(e) // for now
@@ -170,11 +187,10 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 			t, _ := template.New("errorPage").Parse(errorPage)
 			t.Execute(w, nil)
 			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
-			return
+			redirected = true
+			return redirected
 		}
-	}
-
-	if requestParams["gameid"] == structures.NewGameUUID || gameUUID == "" {
+	} else if gameUUID == structures.NewGameUUID {
 		sessionIDHash := session.ID + time.Now().String()
 		gameUUID = uuid.NewV5(uuid.NamespaceOID, sessionIDHash).String()
 		newGame := structures.NewGame(gameUUID, account.ID)
@@ -185,16 +201,32 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 			panic(e) // for now
 		}
 		http.Redirect(w, r, "/games/"+gameUUID, http.StatusMovedPermanently)
-		return
+		redirected = true
+		return redirected
 	}
 
-	render := render.New(render.Options{
-		Layout:        "content",
-		IsDevelopment: true,
-		Funcs:         []template.FuncMap{funcMap},
-	})
+	return redirected
+}
 
-	render.HTML(w, http.StatusOK, "game", account)
+func getAccount(r *http.Request, w http.ResponseWriter, session *sessions.Session) *structures.Account {
+	var account *structures.Account
+
+	if session.Values[accountKey] == nil {
+		if r.FormValue("cmdrName") == "" || r.FormValue("cmdrName") == "stranger!" {
+			// new accounts require a CommanderName and 'stranger!' is reserved ;)
+			t, _ := template.New("errorPage").Parse(errorPage)
+			t.Execute(w, nil)
+			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
+			return nil
+		}
+
+		account = structures.NewAccount(r.FormValue("cmdrName"))
+		session.Values[accountKey] = account
+	} else {
+		account = session.Values[accountKey].(*structures.Account)
+	}
+
+	return account
 }
 
 var upgrader = websocket.Upgrader{

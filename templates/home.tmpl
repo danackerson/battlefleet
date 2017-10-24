@@ -1,12 +1,20 @@
 {{ if eq .CurrentGameID "__new__" }}
+  {{ if eq .Commander "stranger!" }}
 <p>Welcome, {{ .Commander }}</p>
+  {{ else }}
+<p>Welcome, <a href="/account/">{{ .Commander }}</a></p>
+  {{ end }}
 <form action="/games/{{ .CurrentGameID }}?ts={{ curr_time }}" method="post">
+  {{ if eq .Commander "stranger!" }}
   Name: <input type="text" name="cmdrName" required>
+  {{ end }}
   <input type="submit" value="New game!" />
 </form>
 {{ else }}
 <p>Welcome, <a href="/account/">{{ .Commander }}</a></p>
-{{ $len_games := len .Games }}
-{{ if lt $len_games 3 }}<input type="button" onclick="location.href='/games/__new__?ts={{ curr_time }}';" value="New game!" />{{ end }}
+  {{ $len_games := len .Games }}
+  {{ if lt $len_games 3 }}
+<input type="button" onclick="location.href='/games/__new__?ts={{ curr_time }}';" value="New game!" />
+  {{ end }}
 <input type="button" onclick="location.href='/games/{{ .CurrentGameID }}?ts={{ curr_time }}';" value="Rejoin the fleet!" />
 {{ end }}

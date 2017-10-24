@@ -39,7 +39,23 @@ func NewAccount(username string) *Account {
 	return account
 }
 
-func (account *Account) AccountOwnsGame(gameID string) bool {
+// DeleteGame from the account
+func (account *Account) DeleteGame(gameID string) {
+	for i, game := range account.Games {
+		if game.ID == gameID {
+			//copy(account.Games[i:], account.Games[i+1:])
+			account.Games[i] = account.Games[len(account.Games)-1]
+			account.Games = account.Games[:len(account.Games)-1]
+			if account.CurrentGameID == gameID {
+				account.CurrentGameID = NewGameUUID
+			}
+			break
+		}
+	}
+}
+
+// OwnsGame checks to see if the provided gameUUID is owned by the asking account
+func (account *Account) OwnsGame(gameID string) bool {
 	owns := false
 	for _, game := range account.Games {
 		if game.ID == gameID {

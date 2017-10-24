@@ -11,6 +11,13 @@ function confirmAccountDeletion(cmdrName) {
     }
 }
 
+function confirmGameDeletion(gameID) {
+    var confirmed = confirm("Are you sure you want to DELETE your game?");
+    if (confirmed) {
+      window.location.href = "/games/" + gameID + "?action=delete";
+    }
+}
+
 function disconnectServer() {
   userDisconnect = true;
   wsApp.$data.ws.close();

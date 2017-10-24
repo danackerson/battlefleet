@@ -12,23 +12,24 @@ import (
 	"github.com/urfave/negroni"
 )
 
-var prodSession = false
 var httpPort = ":8083"
 var sessionCookieKey = "battlefleetID"
 var accountIDKey = "ownerAccountID"
 var accountKey = "ownerAccount"
 var cmdrNameKey = "cmdrName"
 var gameUUIDKey = "gameUUID"
+var mongoDBName = "fleetbattle"
+var mongoCollection = "battlefleetSessions"
+
 var mongoDBUser string
 var mongoDBPass string
 var mongoDBHost string
-var mongoDBName = "fleetbattle"
-var mongoCollection = "battlefleetSessions"
-var sessionStore *sessions.FilesystemStore
 var version string
+var sessionStore *sessions.FilesystemStore
+var prodSession = false
 
 func main() {
-	parseEnvVariables()
+	prepareSessionEnvironment()
 
 	router := mux.NewRouter()
 	setUpMuxHandlers(router)
@@ -39,7 +40,7 @@ func main() {
 	http.ListenAndServe(httpPort, n)
 }
 
-func parseEnvVariables() {
+func prepareSessionEnvironment() {
 	gob.Register(&structures.Account{})
 	gob.Register(&structures.Game{})
 	gob.Register(&structures.Ship{})

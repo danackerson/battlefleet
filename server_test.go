@@ -20,7 +20,7 @@ var wsHost = "ws://localhost" + httpPort
 var router = mux.NewRouter()
 
 func init() {
-	parseEnvVariables()
+	prepareSessionEnvironment()
 	setUpMuxHandlers(router)
 	setUpFuncMaps()
 }
@@ -59,7 +59,13 @@ func prepareServeHTTP(context *testRequestContext) (*httptest.ResponseRecorder, 
 	return res, req
 }
 
-// TestHome1Game1Home2
+// TODO - remember to cleanup session afterwards!
+// TestNewAccountNewGameDeleteGameDeleteAccount
+
+// TODO - remember to cleanup session afterwards!
+// TestNewAccountNewGame1NewGame2NewGame3NoGame4DeleteGame3HomePageNewGame
+
+// TestHome1NewGame1Home2NewGame2
 // 1. visits homepage with no existing session
 // 2. creates and visits new game page
 // 3. revisits homepage with existing session
@@ -76,7 +82,7 @@ func TestHome1Game1Home2(t *testing.T) {
 		sessionCookie: sessionCookie, session: nil, formVariables: nil,
 	}
 	res, req := prepareServeHTTP(context)
-	router.ServeHTTP(res, req)
+	router.ServeHTTP(res, req) // new session appears right here!
 	session, sessErr := sessionStore.Get(req, sessionCookieKey)
 	if sessErr != nil {
 		log.Printf("sessErr 1: %v\n", sessErr)
@@ -90,7 +96,6 @@ func TestHome1Game1Home2(t *testing.T) {
 	exp1 := "/games/" + session.Values[gameUUIDKey].(string)
 	exp2 := "New game!"
 	exp3 := "Rejoin fleet"
-
 	act := res.Body.String()
 	if !strings.Contains(act, exp1) || !strings.Contains(act, exp2) || strings.Contains(act, exp3) {
 		t.Fatalf("Expected %s\ngot %s", exp1, act)
@@ -105,12 +110,10 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-
 	session, _ = sessionStore.Get(req, sessionCookieKey)
 	gameUUID := session.Values[gameUUIDKey].(string)
 	account := session.Values[accountKey].(*structures.Account)
 	cmdrNamed := account.Commander
-
 	newGameURL := res.Header().Get("Location")
 	if res.Code != 301 || cmdrNamed != "Shade" || !strings.Contains(newGameURL, gameUUID) {
 		t.Fatalf("Expecting redirect to /games/%s", gameUUID)
@@ -124,7 +127,6 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-
 	session, _ = sessionStore.Get(req, sessionCookieKey)
 	account = session.Values[accountKey].(*structures.Account)
 	if len(account.Games) != 1 {
