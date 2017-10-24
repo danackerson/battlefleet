@@ -80,7 +80,7 @@ func accountHandler(w http.ResponseWriter, r *http.Request) {
 		Funcs:         []template.FuncMap{funcMap},
 	})
 
-	render.HTML(w, http.StatusOK, "account", *account)
+	render.HTML(w, http.StatusOK, "account", account)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

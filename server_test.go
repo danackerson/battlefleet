@@ -59,27 +59,71 @@ func prepareServeHTTP(context *testRequestContext) (*httptest.ResponseRecorder, 
 	return res, req
 }
 
-// TODO - remember to cleanup session afterwards!
 // TestNewAccountNewGameDeleteGameDeleteAccount
-
-// TODO - remember to cleanup session afterwards!
-// TestNewAccountNewGame1NewGame2NewGame3NoGame4DeleteGame3HomePageNewGame
-
-// TestHome1NewGame1Home2NewGame2
-// 1. visits homepage with no existing session
-// 2. creates and visits new game page
-// 3. revisits homepage with existing session
-// 4. create a new game with existing session
-// 5. goto new game page and verify *new* game :)
-func TestHome1Game1Home2(t *testing.T) {
+func TestNewAccountNewGameDeleteGameDeleteAccount(t *testing.T) {
 	t.Parallel()
 
-	sessionCookie := "" // comment
+	sessionCookie, session := testFirstHomePageVisit(t)
 
+	newGameURL, gameUUID, session := testNewGame(t, sessionCookie, session)
+
+	session = testVisitGamePage(t, newGameURL, sessionCookie, session)
+
+	// FOURTH: visit the account page
+	context := &testRequestContext{
+		requestType: "GET", requestURL: host + "/account/",
+		sessionCookie: sessionCookie, session: session, formVariables: nil,
+	}
+	res, req := prepareServeHTTP(context)
+	router.ServeHTTP(res, req)
+	session, _ = sessionStore.Get(req, sessionCookieKey)
+	account := session.Values[accountKey].(*structures.Account)
+
+	act := res.Body.String()
+	exp1 := "confirmGameDeletion(&#34;" + gameUUID + "&#34;);"
+	exp2 := "Welcome, " + account.Commander
+	if !strings.Contains(act, exp1) && !strings.Contains(act, exp2) {
+		t.Fatalf("Expected %s\ngot %s", exp1, act)
+	}
+
+	// FIFTH: delete the game
+	context = &testRequestContext{
+		requestType: "GET", requestURL: host + "/games/" + gameUUID + "?action=delete",
+		sessionCookie: sessionCookie, session: session, formVariables: nil,
+	}
+	res, req = prepareServeHTTP(context)
+	router.ServeHTTP(res, req)
+	session, _ = sessionStore.Get(req, sessionCookieKey)
+	account = session.Values[accountKey].(*structures.Account)
+	if len(account.Games) != 0 &&
+		account.CurrentGameID != structures.NewGameUUID &&
+		session.Values[gameUUIDKey] != "" {
+		t.Fatalf("Expected 0 Games for current account")
+	}
+
+	// SIXTH: delete the account
+	context = &testRequestContext{
+		requestType: "GET", requestURL: host + "/account/?action=delete",
+		sessionCookie: sessionCookie, session: session, formVariables: nil,
+	}
+	res, req = prepareServeHTTP(context)
+	router.ServeHTTP(res, req)
+	session, _ = sessionStore.Get(req, sessionCookieKey)
+	newAccount := session.Values[accountKey]
+	cookieString := res.Header().Get("Set-Cookie")
+	cookieString = strings.TrimLeft(cookieString, sessionCookieKey+"=")
+	newSessionCookie := strings.Split(cookieString, ";")[0]
+
+	if newAccount != nil && sessionCookie != newSessionCookie {
+		t.Fatalf("Expected a brand new session with No Account!")
+	}
+}
+
+func testFirstHomePageVisit(t *testing.T) (string, *sessions.Session) {
 	// FIRST homepage visit - no session
 	context := &testRequestContext{
 		requestType: "GET", requestURL: host + "/",
-		sessionCookie: sessionCookie, session: nil, formVariables: nil,
+		sessionCookie: "", session: nil, formVariables: nil,
 	}
 	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req) // new session appears right here!
@@ -89,7 +133,7 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 	cookieString := res.Header().Get("Set-Cookie")
 	cookieString = strings.TrimLeft(cookieString, sessionCookieKey+"=")
-	sessionCookie = strings.Split(cookieString, ";")[0]
+	sessionCookie := strings.Split(cookieString, ";")[0]
 
 	// Verify we see a URL with the "__new__" as "New game!"
 	// and NO button to rejoin the fleet...
@@ -101,14 +145,18 @@ func TestHome1Game1Home2(t *testing.T) {
 		t.Fatalf("Expected %s\ngot %s", exp1, act)
 	}
 
-	// SECOND visit New Game page
-	context = &testRequestContext{
+	return sessionCookie, session
+}
+
+func testNewGame(t *testing.T, sessionCookie string,
+	session *sessions.Session) (string, string, *sessions.Session) {
+	context := &testRequestContext{
 		requestType:   "POST",
-		requestURL:    host + exp1,
+		requestURL:    host + "/games/" + session.Values[gameUUIDKey].(string),
 		sessionCookie: sessionCookie, session: session,
 		formVariables: strings.NewReader("cmdrName=Shade"),
 	}
-	res, req = prepareServeHTTP(context)
+	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, _ = sessionStore.Get(req, sessionCookieKey)
 	gameUUID := session.Values[gameUUIDKey].(string)
@@ -119,43 +167,68 @@ func TestHome1Game1Home2(t *testing.T) {
 		t.Fatalf("Expecting redirect to /games/%s", gameUUID)
 	}
 
+	return newGameURL, gameUUID, session
+}
+
+func testVisitGamePage(t *testing.T, newGameURL string,
+	sessionCookie string, session *sessions.Session) *sessions.Session {
 	// THIRD follow redirect to The Game page ;)
-	context = &testRequestContext{
+	context := &testRequestContext{
 		requestType:   "GET",
 		requestURL:    host + newGameURL,
 		sessionCookie: sessionCookie, session: session, formVariables: nil,
 	}
-	res, req = prepareServeHTTP(context)
+	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
 	session, _ = sessionStore.Get(req, sessionCookieKey)
-	account = session.Values[accountKey].(*structures.Account)
+	account := session.Values[accountKey].(*structures.Account)
 	if len(account.Games) != 1 {
 		t.Fatalf("Expected only one game!")
 	}
-	act = res.Body.String()
+	act := res.Body.String()
 	if res.Code != 200 || !strings.Contains(act, "Engage!") {
 		log.Printf("%s\n", act)
 		t.Fatalf("Expected working game page but didn't get it (%d)", res.Code)
 	}
 
+	return session
+}
+
+// TestHome1NewGame1Home2NewGame2
+// 1. visits homepage with no existing session
+// 2. creates and visits new game page
+// 3. revisits homepage with existing session
+// 4. create a new game with existing session
+// 5. goto new game page and verify *new* game :)
+func TestHome1Game1Home2(t *testing.T) {
+	t.Parallel()
+
+	sessionCookie, session := testFirstHomePageVisit(t)
+
+	newGameURL, gameUUID, session := testNewGame(t, sessionCookie, session)
+
+	session = testVisitGamePage(t, newGameURL, sessionCookie, session)
+
 	// FOURTH revisit Home and verify the "Rejoin Fleet!" @ gameUUID URL
-	context = &testRequestContext{
+	context := &testRequestContext{
 		requestType: "GET", requestURL: host + "/",
 		sessionCookie: sessionCookie, session: session, formVariables: nil,
 	}
-	res, req = prepareServeHTTP(context)
+	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, sessErr = sessionStore.Get(req, sessionCookieKey)
-	account = session.Values[accountKey].(*structures.Account)
+	session, sessErr := sessionStore.Get(req, sessionCookieKey)
+	account := session.Values[accountKey].(*structures.Account)
 	if len(account.Games) != 1 {
 		t.Fatalf("Expected no new games to be created!")
 	}
+	exp1 := ""
+	exp3 := "Rejoin fleet"
 	if sessErr != nil {
 		log.Printf("sessErr 3: %v\n", sessErr)
 	} else {
 		exp1 = "/games/" + session.Values[gameUUIDKey].(string)
 	}
-	act = res.Body.String()
+	act := res.Body.String()
 	if !strings.Contains(act, exp1) && !strings.Contains(act, exp3) {
 		t.Fatalf("Expected %s\ngot %s", exp1, act)
 	}
