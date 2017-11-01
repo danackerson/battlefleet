@@ -17,13 +17,22 @@
     width:100px;
 }
 </style>
-
-<p>Welcome, <a href="/" style="padding-right:95px;">{{ .Commander }}</a>
-  <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Commander }}')">Delete Account?</button>
+<script>
+var AUTH0_CLIENT_ID = '{{ .Data.Auth0ClientID }}';
+var AUTH0_DOMAIN = '{{ .Data.Auth0Domain }}';
+var AUTH0_CALLBACK_URL = '{{ .Data.Auth0CallbackURL }}';
+</script>
+<p>Welcome, <a href="/" style="padding-right:95px;">{{ .Account.Commander }}</a>
+  {{ if not .Account.Auth0Token }}
+  <button style="background-color:white;color:darkblue;border-radius:8px;" onclick="loginAuth0()">Login</button>
+  {{ else }}
+  <button style="background-color:darkblue;color:white;border-radius:8px;" onclick="logoutAuth0()">Quit</button>
+  {{ end }}
+  <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Account.Commander }}')">Delete</button>
 </p>
-{{ $current_game_id := .CurrentGameID }}
+{{ $current_game_id := .Account.CurrentGameID }}
 <div id="container">
-{{ range $key, $game := .Games }}
+{{ range $key, $game := .Account.Games }}
 {{ $div_id := "left" }}
 {{ if eq $key 2 }}
 {{ $div_id := "right" }}

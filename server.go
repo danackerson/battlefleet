@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/gob"
+	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -9,6 +11,7 @@ import (
 	"github.com/danackerson/battlefleet/structures"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/joho/godotenv"
 	"github.com/urfave/negroni"
 )
 
@@ -27,6 +30,17 @@ var mongoDBHost string
 var version string
 var sessionStore *sessions.FilesystemStore
 var prodSession = false
+
+// Auth0Data for storing Auth0 variables
+type Auth0Data struct {
+	Auth0ClientID          string
+	Auth0ClientSecret      string
+	Auth0Domain            string
+	Auth0CallbackURLString string
+	Auth0CallbackURL       template.URL
+}
+
+var auth0data Auth0Data
 
 func main() {
 	prepareSessionEnvironment()
@@ -56,6 +70,12 @@ func prepareSessionEnvironment() {
 			Domain: "localhost",
 			MaxAge: maxAge, // one week
 		}
+
+		// load test vars from .env
+		err := godotenv.Load()
+		if err != nil {
+			log.Printf("env var load failure: %s", err.Error())
+		}
 	} else {
 		maxAge := 3600 * 24 * 365 // 1 year expiration
 		sessionStore.Options = &sessions.Options{
@@ -65,6 +85,14 @@ func prepareSessionEnvironment() {
 			Secure:   true,
 			HttpOnly: true,
 		}
+	}
+
+	auth0data = Auth0Data{
+		os.Getenv("AUTH0_CLIENT_ID"),
+		os.Getenv("AUTH0_CLIENT_SECRET"),
+		os.Getenv("AUTH0_DOMAIN"),
+		os.Getenv("AUTH0_CALLBACK_URL"),
+		template.URL(os.Getenv("AUTH0_CALLBACK_URL")),
 	}
 
 	version = os.Getenv("CIRCLE_BUILD_NUM")
@@ -90,6 +118,7 @@ func setupMongoDBSessionStore(mongoDBUser string, mongoDBPass string, mongoDBHos
 
 func setUpMuxHandlers(router *mux.Router) {
 	router.HandleFunc("/", homeHandler)
+	router.HandleFunc("/callback", callbackHandler)
 	router.HandleFunc("/games/{gameid}", gameHandler).Name("games")
 	router.HandleFunc("/account/", accountHandler)
 	router.HandleFunc("/wsInit", serveWebSocket)

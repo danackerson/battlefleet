@@ -2,3 +2,4 @@ tmp/
 **/.DS_Store
 debug
 debug.test
+.env

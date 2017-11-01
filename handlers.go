@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2"
 
 	"github.com/danackerson/battlefleet/structures"
 	"github.com/danackerson/battlefleet/websockets"
@@ -20,11 +23,10 @@ import (
 
 // https://github.com/riscie/websocket-tic-tac-toe/ <= cool ideas
 
-// GameInfo is now commented
-type GameInfo struct {
-	Timestamp     string
-	GameUUID      template.JS
-	CommanderName string
+// TemplateVars as helper for rendering pages
+type TemplateVars struct {
+	Account *structures.Account
+	Data    Auth0Data
 }
 
 const errorPage = `
@@ -39,8 +41,10 @@ const errorPage = `
 		<link rel="icon" href="/images/wormhole.png">
   </head>
   <body>
-    Invalid game ID or Commander name.<br/>
-		Double check the ID or choose a different name to make a <a href="/">new game</a>.
+    <br/><br/><h3>You've encountered a wormhole - <a href="/">return to base</a> immediately!</h3><br/></br>
+		<hr><br/><br/>
+		If this problem persists, please forward this msg to admin@ackerson.de:<br/><br/>
+		{{ . }}<br/><br/>
 `
 
 var funcMap template.FuncMap
@@ -61,26 +65,56 @@ func accountHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := sessionStore.Get(r, sessionCookieKey)
 	if session.Values[accountKey] != nil {
 		account = session.Values[accountKey].(*structures.Account)
-	}
 
-	requestParams := r.URL.Query()
-	if len(requestParams) > 0 && requestParams["action"][0] == "delete" {
-		account.DeleteAccount()
-		session.Options.MaxAge = -1
-		if e := session.Save(r, w); e != nil {
-			panic(e) // for now
+		requestParams := r.URL.Query()
+		if len(requestParams) > 0 {
+			if requestParams["action"][0] == "delete" {
+				account.DeleteAccount()
+				session.Options.MaxAge = -1
+				if e := session.Save(r, w); e != nil {
+					t, _ := template.New("errorPage").Parse(errorPage)
+					t.Execute(w, e.Error())
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					return
+				}
+				// Session Flash msg "Account deleted"
+				http.Redirect(w, r, "/?account=deleted", http.StatusTemporaryRedirect)
+				return
+			} else if requestParams["action"][0] == "logout" {
+				account.EndSession()
+				session.Options.MaxAge = -1
+				if e := session.Save(r, w); e != nil {
+					t, _ := template.New("errorPage").Parse(errorPage)
+					t.Execute(w, e.Error())
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					return
+				}
+
+				scheme := "http"
+				if prodSession {
+					scheme = "https"
+				}
+				returnHost := strings.Replace(r.Host, ":", "%3A", 1)
+				returnTo := "?returnTo=" + scheme + "%3A%2F%2F" + returnHost + "&client_id=" + auth0data.Auth0ClientID
+				http.Redirect(w, r, "https://battlefleet.eu.auth0.com/v2/logout"+returnTo, http.StatusTemporaryRedirect)
+				return
+			}
+
 		}
-		// Session Flash msg "Account deleted"
-		http.Redirect(w, r, "/?account=deleted", http.StatusTemporaryRedirect)
+
+		render := render.New(render.Options{
+			Layout:        "content",
+			IsDevelopment: !prodSession,
+			Funcs:         []template.FuncMap{funcMap},
+		})
+
+		render.HTML(w, http.StatusOK, "account", &TemplateVars{account, auth0data})
+	} else {
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, "You are currently not logged in!")
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
-	render := render.New(render.Options{
-		Layout:        "content",
-		IsDevelopment: true,
-		Funcs:         []template.FuncMap{funcMap},
-	})
-
-	render.HTML(w, http.StatusOK, "account", account)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,11 +136,11 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	render := render.New(render.Options{
 		Layout:        "content",
-		IsDevelopment: true,
+		IsDevelopment: !prodSession,
 		Funcs:         []template.FuncMap{funcMap},
 	})
 
-	render.HTML(w, http.StatusOK, "home", account)
+	render.HTML(w, http.StatusOK, "home", &TemplateVars{account, auth0data})
 }
 
 // VersionHandler now commented
@@ -135,7 +169,15 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 
 	session, sessionErr := sessionStore.Get(r, sessionCookieKey)
 	if sessionErr != nil {
-		panic(sessionErr)
+		if strings.Contains(sessionErr.Error(), "no such file or directory") {
+			// don't panic
+			log.Printf("Creating new session: %s", session.ID)
+		} else {
+			t, _ := template.New("errorPage").Parse(errorPage)
+			t.Execute(w, sessionErr.Error())
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	account := getAccount(r, w, session)
@@ -144,8 +186,8 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 		redirected := setupGame(r, w, session, account, gameUUID)
 
 		if !redirected {
-			queryParams := r.URL.Query()
-			if len(queryParams) > 0 && queryParams["action"][0] == "delete" {
+			action, ok := r.URL.Query()["action"]
+			if ok && len(action) > 0 && action[0] == "delete" {
 				account.DeleteGame(gameUUID)
 				if session.Values[gameUUIDKey] == gameUUID {
 					session.Values[gameUUIDKey] = ""
@@ -154,7 +196,10 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 				// a new request will fetch the account from the session on disk
 				// so deleting a game is not really Deleted until the session is saved!
 				if e := session.Save(r, w); e != nil {
-					panic(e) // for now
+					t, _ := template.New("errorPage").Parse(errorPage)
+					t.Execute(w, e.Error())
+					http.Redirect(w, r, "/", http.StatusInternalServerError)
+					return
 				}
 				http.Redirect(w, r, "/account/", http.StatusTemporaryRedirect)
 				return
@@ -162,11 +207,11 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 
 			render := render.New(render.Options{
 				Layout:        "content",
-				IsDevelopment: true,
+				IsDevelopment: !prodSession,
 				Funcs:         []template.FuncMap{funcMap},
 			})
 
-			render.HTML(w, http.StatusOK, "game", account)
+			render.HTML(w, http.StatusOK, "game", &TemplateVars{account, auth0data})
 		}
 	}
 }
@@ -181,11 +226,17 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 			account.CurrentGameID = gameUUID
 			session.Values[gameUUIDKey] = gameUUID
 			if e := session.Save(r, w); e != nil {
-				panic(e) // for now
+				t, _ := template.New("errorPage").Parse(errorPage)
+				t.Execute(w, e.Error())
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				redirected = true
+				return redirected
 			}
 		} else {
 			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, nil)
+			log.Println("hello?!")
+			errorString := "You neither own Game ID:<span style='color:orange;'>" + gameUUID + "</span> nor have you been invited to join."
+			t.Execute(w, template.JS(errorString))
 			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 			redirected = true
 			return redirected
@@ -198,7 +249,11 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 		session.Values[accountKey] = account
 		session.Values[gameUUIDKey] = gameUUID
 		if e := session.Save(r, w); e != nil {
-			panic(e) // for now
+			t, _ := template.New("errorPage").Parse(errorPage)
+			t.Execute(w, e)
+			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
+			redirected = true
+			return redirected
 		}
 		http.Redirect(w, r, "/games/"+gameUUID, http.StatusMovedPermanently)
 		redirected = true
@@ -215,7 +270,7 @@ func getAccount(r *http.Request, w http.ResponseWriter, session *sessions.Sessio
 		if r.FormValue("cmdrName") == "" || r.FormValue("cmdrName") == "stranger!" {
 			// new accounts require a CommanderName and 'stranger!' is reserved ;)
 			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, nil)
+			t.Execute(w, "New accounts require a Commander name and 'stranger!' is not allowed.")
 			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 			return nil
 		}
@@ -261,4 +316,66 @@ func serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go websockets.ServerTime(ws)
+}
+
+func callbackHandler(w http.ResponseWriter, r *http.Request) {
+	domain := auth0data.Auth0Domain
+	conf := &oauth2.Config{
+		ClientID:     auth0data.Auth0ClientID,
+		ClientSecret: auth0data.Auth0ClientSecret,
+		RedirectURL:  auth0data.Auth0CallbackURLString,
+		Scopes:       []string{"openid", "profile"},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://" + domain + "/authorize",
+			TokenURL: "https://" + domain + "/oauth/token",
+		},
+	}
+
+	code := r.URL.Query().Get("code")
+
+	token, err := conf.Exchange(oauth2.NoContext, code)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Getting now the userInfo
+	client := conf.Client(oauth2.NoContext, token)
+	resp, err := client.Get("https://" + domain + "/userinfo")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	raw, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var profile map[string]interface{}
+	if err = json.Unmarshal(raw, &profile); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	session, err := sessionStore.Get(r, sessionCookieKey)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if session.Values[accountKey] != nil {
+		account := session.Values[accountKey].(*structures.Account)
+		account.Auth0Token = token
+		account.Auth0Profile = profile
+	}
+	err = session.Save(r, w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Redirect to logged in page
+	http.Redirect(w, r, "/account/", http.StatusSeeOther)
 }

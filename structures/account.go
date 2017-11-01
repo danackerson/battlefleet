@@ -4,6 +4,8 @@ import (
 	"html/template"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -12,7 +14,8 @@ var onlineAccounts []*Account
 // Account object representing a user account
 type Account struct {
 	ID            string // unique
-	Auth0ID       string // if nil, not a registered user: no persistence
+	Auth0Token    *oauth2.Token
+	Auth0Profile  map[string]interface{}
 	Commander     string
 	Games         []*Game // max 3
 	CurrentGameID string
@@ -26,7 +29,7 @@ func NewAccount(username string) *Account {
 	id := uuid.NewV5(uuid.NamespaceOID, username+time.Now().String()).String()
 	account := &Account{
 		ID:            id,
-		Auth0ID:       "",
+		Auth0Token:    nil,
 		CurrentGameID: NewGameUUID,
 		Commander:     username,
 		LastLogin:     time.Now(),
@@ -105,8 +108,9 @@ func (account Account) EndSession() {
 	account.LastLogout = time.Now()
 	removeAccountFromActiveSessions(account)
 
-	if account.Auth0ID != "" {
-		// persist games owned by this account!
+	if account.Auth0Token != nil {
+		// TODO persist games owned by this account!
+
 	}
 }
 
@@ -114,7 +118,7 @@ func (account Account) EndSession() {
 func (account Account) DeleteAccount() {
 	removeAccountFromActiveSessions(account)
 
-	if account.Auth0ID != "" {
+	if account.Auth0Token != nil {
 		// delete Auth0 account
 		// delete MongoDB games owned by this account
 	}
