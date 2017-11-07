@@ -24,6 +24,7 @@ var sessionCookieKey = "battlefleetID"
 var accountIDKey = "ownerAccountID"
 var accountKey = "ownerAccount"
 var cmdrNameKey = "cmdrName"
+var defaultCmdrName = "stranger!"
 var gameUUIDKey = "gameUUID"
 
 var mongoDBUser string

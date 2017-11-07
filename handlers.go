@@ -123,7 +123,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := sessionStore.Get(r, sessionCookieKey)
 
 	if session.Values[cmdrNameKey] == nil {
-		session.Values[cmdrNameKey] = "stranger!"
+		session.Values[cmdrNameKey] = defaultCmdrName
 	}
 
 	if session.Values[gameUUIDKey] == nil {
@@ -154,12 +154,6 @@ func versionHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	w.Write(data)
-}
-
-func loginHander(w http.ResponseWriter, r *http.Request) {
-	// https://manage.auth0.com/#/ => Github account
-	// https://manage.auth0.com/#/clients/Zz58wpKP7ApF0Pw6KGxE35XYecf2sCEO/quickstart => Go
-	// https://auth0.com/blog/vuejs2-authentication-tutorial/
 }
 
 func gameHandler(w http.ResponseWriter, r *http.Request) {
@@ -268,10 +262,10 @@ func getAccount(r *http.Request, w http.ResponseWriter, session *sessions.Sessio
 	var account *structures.Account
 
 	if session.Values[accountKey] == nil {
-		if r.FormValue("cmdrName") == "" || r.FormValue("cmdrName") == "stranger!" {
+		if r.FormValue("cmdrName") == "" || r.FormValue("cmdrName") == defaultCmdrName {
 			// new accounts require a CommanderName and 'stranger!' is reserved ;)
 			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, "New accounts require a Commander name and 'stranger!' is not allowed.")
+			t.Execute(w, "New accounts require a Commander name and '"+defaultCmdrName+"' is not allowed.")
 			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 			return nil
 		}
@@ -383,6 +377,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	c := mongoSession.DB("fleetbattle").C("sessions")
 	err = c.Find(bson.M{"auth0profile.sub": profile["sub"]}).One(&accountFound)
 	if err != nil && err.Error() == "not found" {
+		log.Printf("didn't find '%s' in mongoDB\n", profile["name"])
 		accountFound = structures.NewAccount(profile["nickname"].(string))
 	} else if err != nil && err.Error() != "not found" {
 		t, _ := template.New("errorPage").Parse(errorPage)
@@ -394,7 +389,9 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	var accountPlaying *structures.Account
 	if session.Values[accountKey] != nil {
 		accountPlaying = session.Values[accountKey].(*structures.Account)
-		accountFound.Commander = accountPlaying.Commander
+		if accountPlaying.Commander != defaultCmdrName {
+			accountFound.Commander = accountPlaying.Commander
+		}
 		accountFound.Games = append(accountFound.Games, accountPlaying.Games...)
 	}
 
