@@ -2,11 +2,15 @@ package main
 
 import (
 	"encoding/gob"
+	"errors"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
+
+	mgo "gopkg.in/mgo.v2"
 
 	"github.com/danackerson/battlefleet/structures"
 	"github.com/gorilla/mux"
@@ -21,12 +25,13 @@ var accountIDKey = "ownerAccountID"
 var accountKey = "ownerAccount"
 var cmdrNameKey = "cmdrName"
 var gameUUIDKey = "gameUUID"
-var mongoDBName = "fleetbattle"
-var mongoCollection = "battlefleetSessions"
 
 var mongoDBUser string
 var mongoDBPass string
 var mongoDBHost string
+var mongoDBName = "fleetbattle"
+var mongoDBCollection = "sessions"
+var db *mgo.Session
 var version string
 var sessionStore *sessions.FilesystemStore
 var prodSession = false
@@ -99,21 +104,25 @@ func prepareSessionEnvironment() {
 	if version == "" {
 		version = "TEST"
 	}
+
+	setupMongoDBSession()
 }
 
-// Issue was connectionTimeouts. Fallback to FileSystemStore and a sane
-// method of periodically storing these to mongoDB
-// (e.g. on user manually quiting/saving or browser close)
-func setupMongoDBSessionStore(mongoDBUser string, mongoDBPass string, mongoDBHost string, mongoMaxAge int) {
-	// test: setupMongoDBSessionStore("testDBBF", "testDBBF123", "ds113915.mlab.com:13915", maxAge)
-	// prod: setupMongoDBSessionStore(os.Getenv("mongoDBUser"), os.Getenv("mongoDBPass"), os.Getenv("mongoDBHost"), maxAge)
-	/*mongoURL := "mongodb://" + mongoDBUser + ":" + mongoDBPass + "@" + mongoDBHost + "/" + mongoDBName
-	mongoSession, err := mgo.Dial(mongoURL)
-	if err != nil {
-		log.Printf("Mongo Session ERR: %v\n", err)
+func setupMongoDBSession() {
+	mongoDBDialInfo := &mgo.DialInfo{
+		Addrs:    []string{os.Getenv("mongoDBHost")},
+		Timeout:  10 * time.Second,
+		Database: os.Getenv("mongoDBName"),
+		Username: os.Getenv("mongoDBUser"),
+		Password: os.Getenv("mongoDBPass"),
 	}
-	mongoCollection := mongoSession.DB(mongoDBName).C(mongoCollection)
-	return mongostore.NewMongoStore(mongoCollection, mongoMaxAge, true, []byte(os.Getenv("bfSecret")))*/
+
+	err := errors.New("")
+	db, err = mgo.DialWithInfo(mongoDBDialInfo)
+	if err != nil {
+		log.Printf("Cannot Dial Mongo: %s", err.Error())
+	}
+	db.SetMode(mgo.Monotonic, true)
 }
 
 func setUpMuxHandlers(router *mux.Router) {

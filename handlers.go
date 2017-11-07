@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"golang.org/x/oauth2"
 
 	"github.com/danackerson/battlefleet/structures"
@@ -69,7 +71,7 @@ func accountHandler(w http.ResponseWriter, r *http.Request) {
 		requestParams := r.URL.Query()
 		if len(requestParams) > 0 {
 			if requestParams["action"][0] == "delete" {
-				account.DeleteAccount()
+				account.DeleteAccount(db)
 				session.Options.MaxAge = -1
 				if e := session.Save(r, w); e != nil {
 					t, _ := template.New("errorPage").Parse(errorPage)
@@ -81,7 +83,7 @@ func accountHandler(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, "/?account=deleted", http.StatusTemporaryRedirect)
 				return
 			} else if requestParams["action"][0] == "logout" {
-				account.EndSession()
+				account.EndSession(db)
 				session.Options.MaxAge = -1
 				if e := session.Save(r, w); e != nil {
 					t, _ := template.New("errorPage").Parse(errorPage)
@@ -183,28 +185,27 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 	account := getAccount(r, w, session)
 	if account != nil {
 		gameUUID := requestParams["gameid"]
-		redirected := setupGame(r, w, session, account, gameUUID)
-
-		if !redirected {
-			action, ok := r.URL.Query()["action"]
-			if ok && len(action) > 0 && action[0] == "delete" {
-				account.DeleteGame(gameUUID)
-				if session.Values[gameUUIDKey] == gameUUID {
-					session.Values[gameUUIDKey] = ""
-				}
-				// remember, the session *is* the persistence store
-				// a new request will fetch the account from the session on disk
-				// so deleting a game is not really Deleted until the session is saved!
-				if e := session.Save(r, w); e != nil {
-					t, _ := template.New("errorPage").Parse(errorPage)
-					t.Execute(w, e.Error())
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
-					return
-				}
-				http.Redirect(w, r, "/account/", http.StatusTemporaryRedirect)
+		action, ok := r.URL.Query()["action"]
+		if ok && len(action) > 0 && action[0] == "delete" {
+			account.DeleteGame(gameUUID)
+			if session.Values[gameUUIDKey] == gameUUID {
+				session.Values[gameUUIDKey] = ""
+			}
+			// remember, the session *is* the persistence store
+			// a new request will fetch the account from the session on disk
+			// so deleting a game is not really Deleted until the session is saved!
+			if e := session.Save(r, w); e != nil {
+				t, _ := template.New("errorPage").Parse(errorPage)
+				t.Execute(w, e.Error())
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				return
 			}
+			http.Redirect(w, r, "/account/", http.StatusTemporaryRedirect)
+			return
+		}
 
+		redirected := setupGame(r, w, session, account, gameUUID)
+		if !redirected {
 			render := render.New(render.Options{
 				Layout:        "content",
 				IsDevelopment: !prodSession,
@@ -335,7 +336,9 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, err.Error())
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
 
@@ -343,36 +346,68 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	client := conf.Client(oauth2.NoContext, token)
 	resp, err := client.Get("https://" + domain + "/userinfo")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, err.Error())
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
 
 	raw, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, err.Error())
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
 
 	var profile map[string]interface{}
 	if err = json.Unmarshal(raw, &profile); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, err.Error())
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
 
 	session, err := sessionStore.Get(r, sessionCookieKey)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, err.Error())
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
-	if session.Values[accountKey] != nil {
-		account := session.Values[accountKey].(*structures.Account)
-		account.Auth0Token = token
-		account.Auth0Profile = profile
+
+	var accountFound *structures.Account
+	mongoSession := db.Copy()
+	defer mongoSession.Close()
+	c := mongoSession.DB("fleetbattle").C("sessions")
+	err = c.Find(bson.M{"auth0profile.sub": profile["sub"]}).One(&accountFound)
+	if err != nil && err.Error() == "not found" {
+		accountFound = structures.NewAccount(profile["nickname"].(string))
+	} else if err != nil && err.Error() != "not found" {
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, "Account "+err.Error())
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
+		return
 	}
+
+	var accountPlaying *structures.Account
+	if session.Values[accountKey] != nil {
+		accountPlaying = session.Values[accountKey].(*structures.Account)
+		accountFound.Commander = accountPlaying.Commander
+		accountFound.Games = append(accountFound.Games, accountPlaying.Games...)
+	}
+
+	accountFound.Auth0Token = token
+	accountFound.Auth0Profile = profile
+	accountFound.LastLogin = time.Now()
+
+	session.Values[accountKey] = accountFound
 	err = session.Save(r, w)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, err.Error())
+		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
 

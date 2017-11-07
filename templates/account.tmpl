@@ -26,11 +26,21 @@ var AUTH0_CALLBACK_URL = '{{ .Data.Auth0CallbackURL }}';
   {{ if not .Account.Auth0Token }}
   <button style="background-color:white;color:darkblue;border-radius:8px;" onclick="loginAuth0()">Login</button>
   {{ else }}
-  <button style="background-color:darkblue;color:white;border-radius:8px;" onclick="logoutAuth0()">Quit</button>
-  {{ end }}
+  <button style="background-color:darkblue;color:white;border-radius:8px;" onclick="logoutAuth0({{ len .Account.Games }})">Quit</button>&nbsp;&nbsp;
   <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Account.Commander }}')">Delete</button>
+  {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
+  {{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
+  <br/><br/>
+  <span><img src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/></span>
+  <span>Last played: {{ .Account.LastLogout.Format "02-01-2006 15:04:05" }}</span>
+  {{ end }}
 </p>
 {{ $current_game_id := .Account.CurrentGameID }}
+{{ if (or (lt (len .Account.Games) 3) (eq $current_game_id "__new__")) }}
+<form action="/games/__new__?ts={{ curr_time }}" method="post">
+  <input type="submit" value="New game!" />
+</form>
+{{ end }}
 <div id="container">
 {{ range $key, $game := .Account.Games }}
 {{ $div_id := "left" }}

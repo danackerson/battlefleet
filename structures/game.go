@@ -1,8 +1,9 @@
 package structures
 
 import (
-	"html/template"
 	"time"
+
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/danackerson/battlefleet/hexgrid"
 )
@@ -12,22 +13,21 @@ var NewGameUUID = "__new__"
 
 // Game object representing finite game state
 type Game struct {
-	ID          string // unique
-	Owner       string // Account.ID of owning user -> nil == NPC ship
-	LastTurn    time.Time
-	Ships       []*Ship
-	Map         *hexgrid.Grid
-	Credits     uint32
-	Glory       int16
-	ServerTurn  bool
-	Online      bool
-	ClickableID template.JS
+	ID         string        // unique
+	Owner      bson.ObjectId `bson:"_id,omitempty"` // Account.ID of owning user -> nil == NPC ship
+	LastTurn   time.Time
+	Ships      []*Ship
+	Map        *hexgrid.Grid
+	Credits    uint32
+	Glory      int16
+	ServerTurn bool
+	Online     bool
 	//Player2 uuid.UUID // Account.UUID of 2nd participating user
 	//Player2IsFriend bool // false == foe (can attack Owner)
 }
 
 // NewGame with ships & map
-func NewGame(gameID string, ownerID string) *Game {
+func NewGame(gameID string, ownerID bson.ObjectId) *Game {
 	ship := &Ship{
 		ID:         gameID,
 		Owner:      ownerID,
@@ -47,16 +47,15 @@ func NewGame(gameID string, ownerID string) *Game {
 	grid := hexgrid.MakeGrid(hexgrid.OrientationFlat, center, size)
 
 	game := Game{
-		ID:          gameID,
-		ClickableID: template.JS(gameID),
-		Owner:       ownerID,
-		Online:      true,
-		Credits:     2000,
-		Glory:       0,
-		ServerTurn:  false,
-		Map:         grid,
-		Ships:       []*Ship{ship},
-		LastTurn:    time.Now(),
+		ID:         gameID,
+		Owner:      ownerID,
+		Online:     true,
+		Credits:    2000,
+		Glory:      0,
+		ServerTurn: false,
+		Map:        grid,
+		Ships:      []*Ship{ship},
+		LastTurn:   time.Now(),
 	}
 
 	//spew.Dump(game.Map)

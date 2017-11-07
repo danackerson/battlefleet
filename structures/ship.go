@@ -2,12 +2,13 @@ package structures
 
 import (
 	"github.com/danackerson/battlefleet/hexgrid"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // Ship object representing finite state of ship
 type Ship struct {
 	ID         string
-	Owner      string // Account.ID or Player2.ID => nil for Server ship (NPC)
+	Owner      bson.ObjectId `bson:"_id,omitempty"` // Account.ID or Player2.ID => nil for Server ship (NPC)
 	Name       string
 	Position   hexgrid.Point
 	Crystals   uint32 // 0 means no firing/movement

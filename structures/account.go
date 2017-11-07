@@ -1,40 +1,37 @@
 package structures
 
 import (
-	"html/template"
 	"time"
 
-	"golang.org/x/oauth2"
+	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 
-	uuid "github.com/satori/go.uuid"
+	"golang.org/x/oauth2"
 )
 
 var onlineAccounts []*Account
 
 // Account object representing a user account
 type Account struct {
-	ID            string // unique
+	ID            bson.ObjectId `bson:"_id,omitempty"`
 	Auth0Token    *oauth2.Token
 	Auth0Profile  map[string]interface{}
 	Commander     string
-	Games         []*Game // max 3
+	Games         []*Game
 	CurrentGameID string
 	LastLogout    time.Time
 	LastLogin     time.Time
-	ClickableID   template.JS
 }
 
 // NewAccount and session
 func NewAccount(username string) *Account {
-	id := uuid.NewV5(uuid.NamespaceOID, username+time.Now().String()).String()
 	account := &Account{
-		ID:            id,
+		ID:            bson.NewObjectId(),
 		Auth0Token:    nil,
 		CurrentGameID: NewGameUUID,
 		Commander:     username,
 		LastLogin:     time.Now(),
 		LastLogout:    time.Now(),
-		ClickableID:   template.JS(id),
 	}
 
 	onlineAccounts = append(onlineAccounts, account)
@@ -77,7 +74,7 @@ func (account *Account) AddGame(game *Game) {
 }
 
 // GetAccount finds the account among the online sessions
-func GetAccount(accountID string) *Account {
+func GetAccount(accountID bson.ObjectId) *Account {
 	account := &Account{}
 	for _, accountToCheck := range onlineAccounts {
 		if accountToCheck.ID == accountID {
@@ -104,22 +101,32 @@ func removeAccountFromActiveSessions(account Account) {
 }
 
 // EndSession by removing account
-func (account Account) EndSession() {
-	account.LastLogout = time.Now()
+func (account Account) EndSession(db *mgo.Session) {
 	removeAccountFromActiveSessions(account)
 
 	if account.Auth0Token != nil {
-		// TODO persist games owned by this account!
-
+		mongoSession := db.Copy()
+		defer mongoSession.Close()
+		c := mongoSession.DB("fleetbattle").C("sessions")
+		account.LastLogout = time.Now()
+		_, err := c.UpsertId(account.ID, account)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
 // DeleteAccount and all games from sessions AND persistence store
-func (account Account) DeleteAccount() {
+func (account Account) DeleteAccount(db *mgo.Session) {
 	removeAccountFromActiveSessions(account)
 
 	if account.Auth0Token != nil {
-		// delete Auth0 account
-		// delete MongoDB games owned by this account
+		mongoSession := db.Copy()
+		defer mongoSession.Close()
+		c := mongoSession.DB("fleetbattle").C("sessions")
+		err := c.RemoveId(account.ID)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
