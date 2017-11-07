@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/gob"
-	"errors"
 	"html/template"
 	"log"
 	"net/http"
@@ -118,8 +117,7 @@ func setupMongoDBSession() {
 		Password: os.Getenv("mongoDBPass"),
 	}
 
-	err := errors.New("")
-	db, err = mgo.DialWithInfo(mongoDBDialInfo)
+	db, err := mgo.DialWithInfo(mongoDBDialInfo)
 	if err != nil {
 		log.Printf("Cannot Dial Mongo: %s", err.Error())
 	}
