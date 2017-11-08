@@ -75,7 +75,7 @@ func accountHandler(w http.ResponseWriter, r *http.Request) {
 				session.Options.MaxAge = -1
 				if e := session.Save(r, w); e != nil {
 					t, _ := template.New("errorPage").Parse(errorPage)
-					t.Execute(w, e.Error())
+					t.Execute(w, "saveSession1: "+e.Error())
 					http.Redirect(w, r, "/", http.StatusInternalServerError)
 					return
 				}
@@ -87,7 +87,7 @@ func accountHandler(w http.ResponseWriter, r *http.Request) {
 				session.Options.MaxAge = -1
 				if e := session.Save(r, w); e != nil {
 					t, _ := template.New("errorPage").Parse(errorPage)
-					t.Execute(w, e.Error())
+					t.Execute(w, "saveSession2: "+e.Error())
 					http.Redirect(w, r, "/", http.StatusInternalServerError)
 					return
 				}
@@ -170,7 +170,7 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Creating new session: %s", session.ID)
 		} else {
 			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, sessionErr.Error())
+			t.Execute(w, "getSession: "+sessionErr.Error())
 			http.Redirect(w, r, "/", http.StatusInternalServerError)
 			return
 		}
@@ -190,7 +190,7 @@ func gameHandler(w http.ResponseWriter, r *http.Request) {
 			// so deleting a game is not really Deleted until the session is saved!
 			if e := session.Save(r, w); e != nil {
 				t, _ := template.New("errorPage").Parse(errorPage)
-				t.Execute(w, e.Error())
+				t.Execute(w, "saveSession: "+e.Error())
 				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				return
 			}
@@ -222,7 +222,7 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 			session.Values[gameUUIDKey] = gameUUID
 			if e := session.Save(r, w); e != nil {
 				t, _ := template.New("errorPage").Parse(errorPage)
-				t.Execute(w, e.Error())
+				t.Execute(w, "saveSession1: "+e.Error())
 				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				redirected = true
 				return redirected
@@ -245,7 +245,7 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 		session.Values[gameUUIDKey] = gameUUID
 		if e := session.Save(r, w); e != nil {
 			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, e)
+			t.Execute(w, "saveSession2: "+e.Error())
 			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 			redirected = true
 			return redirected
@@ -331,7 +331,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, err.Error())
+		t.Execute(w, "Auth0 token: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
@@ -341,7 +341,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.Get("https://" + domain + "/userinfo")
 	if err != nil {
 		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, err.Error())
+		t.Execute(w, "Auth0 client: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
@@ -366,7 +366,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := sessionStore.Get(r, sessionCookieKey)
 	if err != nil {
 		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, err.Error())
+		t.Execute(w, "getSession: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
@@ -381,7 +381,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		accountFound = structures.NewAccount(profile["nickname"].(string))
 	} else if err != nil && err.Error() != "not found" {
 		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, "Account "+err.Error())
+		t.Execute(w, "MongoDB: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
@@ -403,7 +403,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	err = session.Save(r, w)
 	if err != nil {
 		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, err.Error())
+		t.Execute(w, "saveSession: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
