@@ -365,19 +365,21 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	session, err := sessionStore.Get(r, sessionCookieKey)
 	if err != nil {
-		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, "getSession: "+err.Error())
-		// probably have an old session cookie so let's nuke it
-		expiration := time.Unix(0, 0)
-		cookie := http.Cookie{
-			Name: sessionCookieKey,
-			Path: "/", HttpOnly: true,
-			Expires: expiration,
+		if strings.Contains(err.Error(), "no such file or directory") {
+			// probably have an old session cookie so recreate
+			session, err = sessionStore.New(r, sessionCookieKey)
+			if err != nil {
+				t, _ := template.New("errorPage").Parse(errorPage)
+				t.Execute(w, "recreateSession: "+err.Error())
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			t, _ := template.New("errorPage").Parse(errorPage)
+			t.Execute(w, "getSession: "+err.Error())
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			return
 		}
-		http.SetCookie(w, &cookie)
-
-		http.Redirect(w, r, "/", http.StatusInternalServerError)
-		return
 	}
 
 	var accountFound *structures.Account
