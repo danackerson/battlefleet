@@ -367,6 +367,10 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "getSession: "+err.Error())
+		// probably have an old session cookie so let's nuke it
+		session.Options.MaxAge = -1
+		session.Save(r, w)
+
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
 	}
