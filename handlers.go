@@ -368,8 +368,13 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "getSession: "+err.Error())
 		// probably have an old session cookie so let's nuke it
-		session.Options.MaxAge = -1
-		session.Save(r, w)
+		expiration := time.Now()
+		cookie := http.Cookie{
+			Name: sessionCookieKey,
+			Path: "/", HttpOnly: true,
+			Expires: expiration, MaxAge: -1,
+		}
+		http.SetCookie(w, &cookie)
 
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
