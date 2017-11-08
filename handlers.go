@@ -365,12 +365,13 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	session, err := sessionStore.Get(r, sessionCookieKey)
 	if err != nil {
+		origError := err.Error()
 		if strings.Contains(err.Error(), "no such file or directory") {
 			// probably have an old session cookie so recreate
 			session, err = sessionStore.New(r, sessionCookieKey)
 			if err != nil {
 				t, _ := template.New("errorPage").Parse(errorPage)
-				t.Execute(w, "recreateSession: "+err.Error())
+				t.Execute(w, "recreateSession: "+err.Error()+" (after '"+origError+"')")
 				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				return
 			}
