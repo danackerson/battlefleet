@@ -79,7 +79,7 @@ func prepareSessionEnvironment() {
 		maxAge := 3600 * 24 * 365 // 1 year expiration
 		SessionStore.Options = &sessions.Options{
 			Path:     "/",
-			Domain:   "battlefleet.ackerson.de",
+			Domain:   "battlefleet.online",
 			MaxAge:   maxAge,
 			Secure:   true,
 			HttpOnly: true,
