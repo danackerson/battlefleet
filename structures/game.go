@@ -4,8 +4,6 @@ import (
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
-
-	"github.com/danackerson/battlefleet/hexgrid"
 )
 
 // NewGameUUID is the default value for creating a new game
@@ -17,7 +15,7 @@ type Game struct {
 	Owner      bson.ObjectId `bson:"_id,omitempty"` // Account.ID of owning user -> nil == NPC ship
 	LastTurn   time.Time
 	Ships      []*Ship
-	Map        *hexgrid.Grid
+	Map        *Grid
 	Credits    uint32
 	Glory      int16
 	ServerTurn bool
@@ -32,7 +30,7 @@ func NewGame(gameID string, ownerID bson.ObjectId) *Game {
 		ID:         gameID,
 		Owner:      ownerID,
 		Name:       "StarWars",
-		Position:   hexgrid.MakePoint(0, 0),
+		Position:   MakePoint(0, 0),
 		Crystals:   100,
 		GunPower:   10,
 		HullDamage: 0,
@@ -42,9 +40,9 @@ func NewGame(gameID string, ownerID bson.ObjectId) *Game {
 		Class:      "low",
 	}
 
-	center := hexgrid.MakePoint(0, 0)
-	size := hexgrid.MakePoint(11, 11)
-	grid := hexgrid.MakeGrid(hexgrid.OrientationFlat, center, size)
+	center := MakePoint(0, 0)
+	size := MakePoint(11, 11)
+	grid := MakeGrid(OrientationFlat, center, size)
 
 	game := Game{
 		ID:         gameID,

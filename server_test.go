@@ -9,20 +9,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/danackerson/battlefleet/app"
+	"github.com/danackerson/battlefleet/routes"
 	"github.com/danackerson/battlefleet/structures"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 )
 
-var host = "http://localhost" + httpPort
-var wsHost = "ws://localhost" + httpPort
-var router = mux.NewRouter()
+var host = "http://localhost" + app.HTTPPort
+var wsHost = "ws://localhost" + app.HTTPPort
+var router *mux.Router
 
 func init() {
-	prepareSessionEnvironment()
-	setUpMuxHandlers(router)
-	setUpFuncMaps()
+	app.Init()
+	router = routes.SetUpMuxHandlers()
 }
 
 type testRequestContext struct {
@@ -44,12 +45,12 @@ func prepareServeHTTP(context *testRequestContext) (*httptest.ResponseRecorder, 
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
 	if context.sessionCookie != "" {
-		req.AddCookie(&http.Cookie{Name: sessionCookieKey, Value: context.sessionCookie, Expires: time.Now().Add(30 * 24 * time.Hour)})
+		req.AddCookie(&http.Cookie{Name: app.SessionCookieKey, Value: context.sessionCookie, Expires: time.Now().Add(30 * 24 * time.Hour)})
 	}
 
 	if context.session == nil {
-		context.session, _ = sessionStore.Get(req, sessionCookieKey)
-		context.session.Values[gameUUIDKey] = structures.NewGameUUID
+		context.session, _ = app.SessionStore.Get(req, app.SessionCookieKey)
+		context.session.Values[app.GameUUIDKey] = structures.NewGameUUID
 	}
 
 	if e := context.session.Save(req, res); e != nil {
@@ -76,8 +77,8 @@ func TestNewAccountNewGameDeleteGameDeleteAccount(t *testing.T) {
 	}
 	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, _ = sessionStore.Get(req, sessionCookieKey)
-	account := session.Values[accountKey].(*structures.Account)
+	session, _ = app.SessionStore.Get(req, app.SessionCookieKey)
+	account := session.Values[app.AccountKey].(*structures.Account)
 
 	act := res.Body.String()
 	exp1 := "confirmGameDeletion(&#34;" + gameUUID + "&#34;);"
@@ -93,11 +94,11 @@ func TestNewAccountNewGameDeleteGameDeleteAccount(t *testing.T) {
 	}
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, _ = sessionStore.Get(req, sessionCookieKey)
-	account = session.Values[accountKey].(*structures.Account)
+	session, _ = app.SessionStore.Get(req, app.SessionCookieKey)
+	account = session.Values[app.AccountKey].(*structures.Account)
 	if len(account.Games) != 0 &&
 		account.CurrentGameID != structures.NewGameUUID &&
-		session.Values[gameUUIDKey] != "" {
+		session.Values[app.GameUUIDKey] != "" {
 		t.Fatalf("Expected 0 Games for current account")
 	}
 
@@ -108,10 +109,10 @@ func TestNewAccountNewGameDeleteGameDeleteAccount(t *testing.T) {
 	}
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, _ = sessionStore.Get(req, sessionCookieKey)
-	newAccount := session.Values[accountKey]
+	session, _ = app.SessionStore.Get(req, app.SessionCookieKey)
+	newAccount := session.Values[app.AccountKey]
 	cookieString := res.Header().Get("Set-Cookie")
-	cookieString = strings.TrimLeft(cookieString, sessionCookieKey+"=")
+	cookieString = strings.TrimLeft(cookieString, app.SessionCookieKey+"=")
 	newSessionCookie := strings.Split(cookieString, ";")[0]
 
 	if newAccount != nil && sessionCookie != newSessionCookie {
@@ -127,17 +128,17 @@ func testFirstHomePageVisit(t *testing.T) (string, *sessions.Session) {
 	}
 	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req) // new session appears right here!
-	session, sessErr := sessionStore.Get(req, sessionCookieKey)
+	session, sessErr := app.SessionStore.Get(req, app.SessionCookieKey)
 	if sessErr != nil {
 		log.Printf("sessErr 1: %v\n", sessErr)
 	}
 	cookieString := res.Header().Get("Set-Cookie")
-	cookieString = strings.TrimLeft(cookieString, sessionCookieKey+"=")
+	cookieString = strings.TrimLeft(cookieString, app.SessionCookieKey+"=")
 	sessionCookie := strings.Split(cookieString, ";")[0]
 
 	// Verify we see a URL with the "__new__" as "New game!"
 	// and NO button to rejoin the fleet...
-	exp1 := "/games/" + session.Values[gameUUIDKey].(string)
+	exp1 := "/games/" + session.Values[app.GameUUIDKey].(string)
 	exp2 := "New game!"
 	exp3 := "Rejoin fleet"
 	act := res.Body.String()
@@ -152,15 +153,15 @@ func testNewGame(t *testing.T, sessionCookie string,
 	session *sessions.Session) (string, string, *sessions.Session) {
 	context := &testRequestContext{
 		requestType:   "POST",
-		requestURL:    host + "/games/" + session.Values[gameUUIDKey].(string),
+		requestURL:    host + "/games/" + session.Values[app.GameUUIDKey].(string),
 		sessionCookie: sessionCookie, session: session,
 		formVariables: strings.NewReader("cmdrName=Shade"),
 	}
 	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, _ = sessionStore.Get(req, sessionCookieKey)
-	gameUUID := session.Values[gameUUIDKey].(string)
-	account := session.Values[accountKey].(*structures.Account)
+	session, _ = app.SessionStore.Get(req, app.SessionCookieKey)
+	gameUUID := session.Values[app.GameUUIDKey].(string)
+	account := session.Values[app.AccountKey].(*structures.Account)
 	cmdrNamed := account.Commander
 	newGameURL := res.Header().Get("Location")
 	if res.Code != 301 || cmdrNamed != "Shade" || !strings.Contains(newGameURL, gameUUID) {
@@ -180,8 +181,8 @@ func testVisitGamePage(t *testing.T, newGameURL string,
 	}
 	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, _ = sessionStore.Get(req, sessionCookieKey)
-	account := session.Values[accountKey].(*structures.Account)
+	session, _ = app.SessionStore.Get(req, app.SessionCookieKey)
+	account := session.Values[app.AccountKey].(*structures.Account)
 	if len(account.Games) != 1 {
 		t.Fatalf("Expected only one game!")
 	}
@@ -216,8 +217,8 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 	res, req := prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, sessErr := sessionStore.Get(req, sessionCookieKey)
-	account := session.Values[accountKey].(*structures.Account)
+	session, sessErr := app.SessionStore.Get(req, app.SessionCookieKey)
+	account := session.Values[app.AccountKey].(*structures.Account)
 	if len(account.Games) != 1 {
 		t.Fatalf("Expected no new games to be created!")
 	}
@@ -226,7 +227,7 @@ func TestHome1Game1Home2(t *testing.T) {
 	if sessErr != nil {
 		log.Printf("sessErr 3: %v\n", sessErr)
 	} else {
-		exp1 = "/games/" + session.Values[gameUUIDKey].(string)
+		exp1 = "/games/" + session.Values[app.GameUUIDKey].(string)
 	}
 	act := res.Body.String()
 	if !strings.Contains(act, exp1) && !strings.Contains(act, exp3) {
@@ -241,7 +242,7 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, _ = sessionStore.Get(req, sessionCookieKey)
+	session, _ = app.SessionStore.Get(req, app.SessionCookieKey)
 	newGameURL = res.Header().Get("Location")
 	if res.Code != 301 && strings.Contains(newGameURL, gameUUID) {
 		t.Fatalf("Expecting redirect to %s", newGameURL)
@@ -255,9 +256,9 @@ func TestHome1Game1Home2(t *testing.T) {
 	}
 	res, req = prepareServeHTTP(context)
 	router.ServeHTTP(res, req)
-	session, _ = sessionStore.Get(req, sessionCookieKey)
-	gameUUIDNew := session.Values[gameUUIDKey].(string)
-	account = session.Values[accountKey].(*structures.Account)
+	session, _ = app.SessionStore.Get(req, app.SessionCookieKey)
+	gameUUIDNew := session.Values[app.GameUUIDKey].(string)
+	account = session.Values[app.AccountKey].(*structures.Account)
 	if gameUUIDNew == gameUUID || len(account.Games) != 2 {
 		t.Fatalf("Expected new gameUUID (%s)", gameUUIDNew)
 	}
@@ -295,7 +296,7 @@ func TestWebSocketConnect(t *testing.T) {
 	//gameUUID := session.Values[gameUUIDKey].(string)*/
 
 	// 2. open websocket and get server time
-	srv := httptest.NewServer(http.HandlerFunc(serveWebSocket))
+	srv := httptest.NewServer(http.HandlerFunc(routes.ServeWebSocket))
 	u, _ := url.Parse(srv.URL)
 	u.Scheme = "ws"
 	//log.Printf("Testing server @ %+v\n", u)
@@ -334,7 +335,7 @@ func TestVersion(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	// Verify we get the build version id back
-	exp := "{\"build\":\"" + version + "\",\"version\":\"https://circleci.com/gh/danackerson/battlefleet/" + version + "\"}"
+	exp := "{\"build\":\"" + app.Version + "\",\"version\":\"https://circleci.com/gh/danackerson/battlefleet/" + app.Version + "\"}"
 	act := res.Body.String()
 	if !strings.Contains(act, exp) {
 		t.Fatalf("Expected %s got %s", exp, act)
