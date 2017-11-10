@@ -35,7 +35,7 @@ jobs:
       - run:
           name: "Build the docker image"
           command: |
-            env GOOS=linux GOARCH=386 go build -o server server.go handlers.go
+            env GOOS=linux GOARCH=386 go build -o server server.go
             docker build -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
 
       - add-ssh-keys:
