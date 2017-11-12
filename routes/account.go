@@ -8,7 +8,6 @@ import (
 	"github.com/danackerson/battlefleet/app"
 	"github.com/danackerson/battlefleet/structures"
 	"github.com/gorilla/sessions"
-	"github.com/unrolled/render"
 )
 
 // https://github.com/riscie/websocket-tic-tac-toe/ <= cool ideas
@@ -26,7 +25,7 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 				account.DeleteAccount(app.DB)
 				session.Options.MaxAge = -1
 				if e := session.Save(r, w); e != nil {
-					t, _ := template.New("errorPage").Parse(ErrorPage)
+					t, _ := template.New("errorPage").Parse(errorPage)
 					t.Execute(w, "saveSession1: "+e.Error())
 					http.Redirect(w, r, "/", http.StatusInternalServerError)
 					return
@@ -38,7 +37,7 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 				account.EndSession(app.DB)
 				session.Options.MaxAge = -1
 				if e := session.Save(r, w); e != nil {
-					t, _ := template.New("errorPage").Parse(ErrorPage)
+					t, _ := template.New("errorPage").Parse(errorPage)
 					t.Execute(w, "saveSession2: "+e.Error())
 					http.Redirect(w, r, "/", http.StatusInternalServerError)
 					return
@@ -52,16 +51,10 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		render := render.New(render.Options{
-			Layout:        "content",
-			IsDevelopment: !app.ProdSession,
-			Funcs:         []template.FuncMap{FuncMap},
-		})
-
-		render.HTML(w, http.StatusOK, "account",
+		renderer.HTML(w, http.StatusOK, "account",
 			map[string]interface{}{"Account": account, "Data": app.AuthZeroData})
 	} else {
-		t, _ := template.New("errorPage").Parse(ErrorPage)
+		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "You are currently not logged in!")
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
@@ -74,7 +67,7 @@ func getAccount(r *http.Request, w http.ResponseWriter, session *sessions.Sessio
 	if session.Values[app.AccountKey] == nil {
 		if r.FormValue("cmdrName") == "" || r.FormValue("cmdrName") == app.DefaultCmdrName {
 			// new accounts require a CommanderName and 'stranger!' is reserved ;)
-			t, _ := template.New("errorPage").Parse(ErrorPage)
+			t, _ := template.New("errorPage").Parse(errorPage)
 			t.Execute(w, "New accounts require a Commander name and '"+app.DefaultCmdrName+"' is not allowed.")
 			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 			return nil

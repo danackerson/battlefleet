@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	uuid "github.com/satori/go.uuid"
-	"github.com/unrolled/render"
 )
 
 // GameHandler for handling game requests
@@ -29,7 +28,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 			// don't panic
 			log.Printf("Creating new session: %s", session.ID)
 		} else {
-			t, _ := template.New("errorPage").Parse(ErrorPage)
+			t, _ := template.New("errorPage").Parse(errorPage)
 			t.Execute(w, "getSession: "+sessionErr.Error())
 			http.Redirect(w, r, "/", http.StatusInternalServerError)
 			return
@@ -49,7 +48,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 			// a new request will fetch the account from the session on disk
 			// so deleting a game is not really Deleted until the session is saved!
 			if e := session.Save(r, w); e != nil {
-				t, _ := template.New("errorPage").Parse(ErrorPage)
+				t, _ := template.New("errorPage").Parse(errorPage)
 				t.Execute(w, "saveSession: "+e.Error())
 				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				return
@@ -60,13 +59,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 
 		redirected := setupGame(r, w, session, account, gameUUID)
 		if !redirected {
-			render := render.New(render.Options{
-				Layout:        "content",
-				IsDevelopment: !app.ProdSession,
-				Funcs:         []template.FuncMap{FuncMap},
-			})
-
-			render.HTML(w, http.StatusOK, "game",
+			renderer.HTML(w, http.StatusOK, "game",
 				map[string]interface{}{"Account": account, "Data": app.AuthZeroData})
 		}
 	}
@@ -82,14 +75,14 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 			account.CurrentGameID = gameUUID
 			session.Values[app.GameUUIDKey] = gameUUID
 			if e := session.Save(r, w); e != nil {
-				t, _ := template.New("errorPage").Parse(ErrorPage)
+				t, _ := template.New("errorPage").Parse(errorPage)
 				t.Execute(w, "saveSession1: "+e.Error())
 				http.Redirect(w, r, "/", http.StatusInternalServerError)
 				redirected = true
 				return redirected
 			}
 		} else {
-			t, _ := template.New("errorPage").Parse(ErrorPage)
+			t, _ := template.New("errorPage").Parse(errorPage)
 			log.Println("hello?!")
 			errorString := "You neither own Game ID:<span style='color:orange;'>" + gameUUID + "</span> nor have you been invited to join."
 			t.Execute(w, template.JS(errorString))
@@ -105,7 +98,7 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 		session.Values[app.AccountKey] = account
 		session.Values[app.GameUUIDKey] = gameUUID
 		if e := session.Save(r, w); e != nil {
-			t, _ := template.New("errorPage").Parse(ErrorPage)
+			t, _ := template.New("errorPage").Parse(errorPage)
 			t.Execute(w, "saveSession2: "+e.Error())
 			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 			redirected = true

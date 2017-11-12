@@ -33,7 +33,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		t, _ := template.New("errorPage").Parse(ErrorPage)
+		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "Auth0 token: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
@@ -43,7 +43,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	client := conf.Client(oauth2.NoContext, token)
 	resp, err := client.Get("https://" + domain + "/userinfo")
 	if err != nil {
-		t, _ := template.New("errorPage").Parse(ErrorPage)
+		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "Auth0 client: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
@@ -52,7 +52,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	raw, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		t, _ := template.New("errorPage").Parse(ErrorPage)
+		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
@@ -60,7 +60,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	var profile map[string]interface{}
 	if err = json.Unmarshal(raw, &profile); err != nil {
-		t, _ := template.New("errorPage").Parse(ErrorPage)
+		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
@@ -74,14 +74,14 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 			session, err = app.SessionStore.New(r, app.SessionCookieKey)
 			if err != nil {
 				if !strings.Contains(err.Error(), "no such file or directory") {
-					t, _ := template.New("errorPage").Parse(ErrorPage)
+					t, _ := template.New("errorPage").Parse(errorPage)
 					t.Execute(w, "recreateSession: "+err.Error()+" (after '"+origError+"')")
 					http.Redirect(w, r, "/", http.StatusInternalServerError)
 					return
 				}
 			}
 		} else {
-			t, _ := template.New("errorPage").Parse(ErrorPage)
+			t, _ := template.New("errorPage").Parse(errorPage)
 			t.Execute(w, "getSession: "+err.Error())
 			http.Redirect(w, r, "/", http.StatusInternalServerError)
 			return
@@ -97,7 +97,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("didn't find '%s' in mongoDB\n", profile["name"])
 		accountFound = structures.NewAccount(profile["nickname"].(string))
 	} else if err != nil && err.Error() != "not found" {
-		t, _ := template.New("errorPage").Parse(ErrorPage)
+		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "MongoDB: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return
@@ -119,7 +119,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values[app.AccountKey] = accountFound
 	err = session.Save(r, w)
 	if err != nil {
-		t, _ := template.New("errorPage").Parse(ErrorPage)
+		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "saveSession: "+err.Error())
 		http.Redirect(w, r, "/", http.StatusInternalServerError)
 		return

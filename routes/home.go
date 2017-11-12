@@ -1,12 +1,10 @@
 package routes
 
 import (
-	"html/template"
 	"net/http"
 
 	"github.com/danackerson/battlefleet/app"
 	"github.com/danackerson/battlefleet/structures"
-	"github.com/unrolled/render"
 )
 
 // HomeHandler for handling index page requests
@@ -27,12 +25,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		account = session.Values[app.AccountKey].(*structures.Account)
 	}
 
-	render := render.New(render.Options{
-		Layout:        "content",
-		IsDevelopment: !app.ProdSession,
-		Funcs:         []template.FuncMap{FuncMap},
-	})
-
-	render.HTML(w, http.StatusOK, "home",
+	renderer.HTML(w, http.StatusOK, "home",
 		map[string]interface{}{"Account": account, "Data": app.AuthZeroData})
 }

@@ -3,12 +3,23 @@ package routes
 import (
 	"html/template"
 	"net/http"
+	"strconv"
 	"time"
 
+	"gopkg.in/mgo.v2/bson"
+
+	"github.com/danackerson/battlefleet/app"
 	"github.com/gorilla/mux"
+	"github.com/unrolled/render"
 )
 
-const ErrorPage = `
+var renderer = render.New(render.Options{
+	Layout:        "content",
+	IsDevelopment: !app.ProdSession,
+	Funcs:         []template.FuncMap{FuncMap},
+})
+
+const errorPage = `
 <!DOCTYPE html>
 <html>
   <head>
@@ -50,5 +61,18 @@ var FuncMap = template.FuncMap{
 	},
 	"curr_time": func() int64 {
 		return time.Now().Unix()
+	},
+	"to_string": func(value interface{}) string {
+		switch v := value.(type) {
+		case string:
+			return v
+		case int:
+			return strconv.Itoa(v)
+			// Add whatever other types you need
+		case bson.ObjectId:
+			return v.Hex()
+		default:
+			return ""
+		}
 	},
 }
