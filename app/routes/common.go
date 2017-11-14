@@ -3,6 +3,7 @@ package routes
 import (
 	"html/template"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -17,7 +18,7 @@ var renderer = render.New(render.Options{
 	Layout:        "content",
 	IsDevelopment: !app.ProdSession,
 	Funcs:         []template.FuncMap{FuncMap},
-	Directory:     "templates",
+	Directory:     os.Getenv("TEMPLATE_DIR"),
 })
 
 const errorPage = `
