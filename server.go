@@ -11,7 +11,7 @@ import (
 func main() {
 	app.Init()
 
-	router := routes.SetUpMuxHandlers()
+	router := routes.SetUpMuxHandlers(false)
 	n := negroni.Classic()
 	n.UseHandler(router)
 

@@ -10,16 +10,12 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/danackerson/battlefleet/app"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
-	"github.com/unrolled/render"
+	render "github.com/unrolled/render"
 )
 
-var renderer = render.New(render.Options{
-	Layout:        "content",
-	IsDevelopment: !app.ProdSession,
-	Funcs:         []template.FuncMap{FuncMap},
-	Directory:     os.Getenv("TEMPLATE_DIR"),
-})
+var renderer *render.Render
 
 const errorPage = `
 <!DOCTYPE html>
@@ -40,7 +36,7 @@ const errorPage = `
 `
 
 // SetUpMuxHandlers sets up the router
-func SetUpMuxHandlers() *mux.Router {
+func SetUpMuxHandlers(isTest bool) *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/", HomeHandler)
 	router.HandleFunc("/callback", CallbackHandler)
@@ -52,6 +48,19 @@ func SetUpMuxHandlers() *mux.Router {
 			VersionHandler(w, r)
 		}
 	})
+
+	templateDir := os.Getenv("TEMPLATE_DIR")
+	if isTest {
+		templateDir = "templates"
+	}
+	renderer := render.New(render.Options{
+		Layout:        "content",
+		IsDevelopment: !app.ProdSession,
+		Funcs:         []template.FuncMap{FuncMap},
+		Directory:     templateDir,
+	})
+
+	spew.Dump(renderer)
 
 	return router
 }

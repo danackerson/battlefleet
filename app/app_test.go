@@ -25,7 +25,7 @@ var router *mux.Router
 func init() {
 	app.Init()
 	os.Setenv("TEMPLATE_DIR", "templates") // override for testing
-	router = routes.SetUpMuxHandlers()
+	router = routes.SetUpMuxHandlers(true)
 }
 
 type testRequestContext struct {
