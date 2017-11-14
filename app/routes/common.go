@@ -53,7 +53,7 @@ func SetUpMuxHandlers(isTest bool) *mux.Router {
 	if isTest {
 		templateDir = "templates"
 	}
-	renderer := render.New(render.Options{
+	renderer = render.New(render.Options{
 		Layout:        "content",
 		IsDevelopment: !app.ProdSession,
 		Funcs:         []template.FuncMap{FuncMap},
