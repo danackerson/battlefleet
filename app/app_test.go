@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ var router *mux.Router
 
 func init() {
 	app.Init()
+	os.Setenv("TEMPLATE_DIR", "templates") // override for testing
 	router = routes.SetUpMuxHandlers()
 }
 
