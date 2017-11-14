@@ -49,6 +49,9 @@ type Auth0Data struct {
 // Init all the state and session information for the application
 func Init() {
 	prepareSessionEnvironment()
+	if !ProdSession {
+		os.Setenv("TEMPLATE_DIR", "templates") // override CircleCI env testing
+	}
 	setupMongoDBSession()
 }
 
