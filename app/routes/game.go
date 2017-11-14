@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/danackerson/battlefleet/app"
-	"github.com/danackerson/battlefleet/structures"
+	"github.com/danackerson/battlefleet/app/structures"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	uuid "github.com/satori/go.uuid"

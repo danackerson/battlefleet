@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/danackerson/battlefleet/app"
-	"github.com/danackerson/battlefleet/structures"
+	"github.com/danackerson/battlefleet/app/structures"
 	"golang.org/x/oauth2"
 	"gopkg.in/mgo.v2/bson"
 )

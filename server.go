@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/danackerson/battlefleet/app"
-	"github.com/danackerson/battlefleet/routes"
+	"github.com/danackerson/battlefleet/app/routes"
 	"github.com/urfave/negroni"
 )
 

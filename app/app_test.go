@@ -1,4 +1,4 @@
-package main
+package app_test
 
 import (
 	"log"
@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/danackerson/battlefleet/app"
-	"github.com/danackerson/battlefleet/routes"
-	"github.com/danackerson/battlefleet/structures"
+	"github.com/danackerson/battlefleet/app/routes"
+	"github.com/danackerson/battlefleet/app/structures"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/danackerson/battlefleet/structures"
+	"github.com/danackerson/battlefleet/app/structures"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	mgo "gopkg.in/mgo.v2"

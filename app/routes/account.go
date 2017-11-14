@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/danackerson/battlefleet/app"
-	"github.com/danackerson/battlefleet/structures"
+	"github.com/danackerson/battlefleet/app/structures"
 	"github.com/gorilla/sessions"
 )
 

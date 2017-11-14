@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/danackerson/battlefleet/app"
-	"github.com/danackerson/battlefleet/structures"
+	"github.com/danackerson/battlefleet/app/structures"
 )
 
 // HomeHandler for handling index page requests
