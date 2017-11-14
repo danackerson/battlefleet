@@ -17,6 +17,7 @@ var renderer = render.New(render.Options{
 	Layout:        "content",
 	IsDevelopment: !app.ProdSession,
 	Funcs:         []template.FuncMap{FuncMap},
+	Directory:     "templates",
 })
 
 const errorPage = `
