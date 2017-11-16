@@ -10,7 +10,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/danackerson/battlefleet/app"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	render "github.com/unrolled/render"
 )
@@ -59,8 +58,6 @@ func SetUpMuxHandlers(isTest bool) *mux.Router {
 		Funcs:         []template.FuncMap{FuncMap},
 		Directory:     templateDir,
 	})
-
-	spew.Dump(renderer)
 
 	return router
 }

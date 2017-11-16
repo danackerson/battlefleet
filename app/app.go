@@ -47,12 +47,12 @@ type Auth0Data struct {
 }
 
 // Init all the state and session information for the application
-func Init() {
-	prepareSessionEnvironment()
+func Init(isTest bool) {
+	prepareSessionEnvironment(isTest)
 	setupMongoDBSession()
 }
 
-func prepareSessionEnvironment() {
+func prepareSessionEnvironment(isTest bool) {
 	SessionStore = sessions.NewFilesystemStore("/tmp", []byte(os.Getenv("bfSecret")))
 	SessionStore.MaxLength(32 * 1024) // else securecookie: value too long error
 	gob.Register(&structures.Account{})
@@ -70,7 +70,11 @@ func prepareSessionEnvironment() {
 		}
 
 		// load test vars from .env
-		err := godotenv.Load()
+		envDir := "../.env"
+		if !isTest {
+			envDir = ".env"
+		}
+		err := godotenv.Load(envDir)
 		if err != nil {
 			log.Fatalf("env var load failure: %s", err.Error())
 		}

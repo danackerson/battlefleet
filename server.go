@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	app.Init()
+	app.Init(false)
 
 	router := routes.SetUpMuxHandlers(false)
 	n := negroni.Classic()
