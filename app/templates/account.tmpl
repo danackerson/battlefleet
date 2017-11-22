@@ -1,87 +1,79 @@
-<style>
-#container {
-    width:100%;
-    text-align:center;
-}
-#left {
-    float:left;
-    width:100px;
-}
-#center {
-    display: inline-block;
-    margin:0 auto;
-    width:100px;
-}
-#right {
-    float:right;
-    width:100px;
-}
-</style>
 <script>
 var AUTH0_CLIENT_ID = '{{ .Data.Auth0ClientID }}';
 var AUTH0_DOMAIN = '{{ .Data.Auth0Domain }}';
 var AUTH0_CALLBACK_URL = '{{ .Data.Auth0CallbackURL }}';
 </script>
-<p>Welcome, <a href="/" style="padding-right:95px;">{{ .Account.Commander }}</a>
-  {{ if not .Account.Auth0Token }}
-  <button style="background-color:white;color:darkblue;border-radius:8px;" onclick="loginAuth0()">Login</button>
-  {{ else }}
-  <button style="background-color:darkblue;color:white;border-radius:8px;" onclick="logoutAuth0({{ len .Account.Games }})">Quit</button>&nbsp;&nbsp;
-  <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Account.Commander }}')">Delete</button>
-  {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
-  {{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
-  <br/><br/>
-  <span><img src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/></span>
-  <span>Last played: {{ .Account.LastLogout.Format "02-01-2006 15:04:05" }}</span>
-  {{ end }}
-</p>
-{{ $current_game_id := .Account.CurrentGameID }}
-{{ if (or (lt (len .Account.Games) 3) (eq $current_game_id "__new__")) }}
-<form action="/games/__new__?ts={{ curr_time }}" method="post">
-  <input type="submit" value="New game!" />
-</form>
-{{ end }}
-<div id="container">
-{{ range $key, $game := .Account.Games }}
-{{ $div_id := "left" }}
-{{ if eq $key 2 }}
-{{ $div_id := "right" }}
-{{ end }}
-{{ if eq $key 3 }}
-{{ $div_id := "center" }}
-{{ end }}
-<div id="{{ $div_id }}" style="width:250px;">
-   <fieldset>
-      <legend style="color:orange;font-weight:bold;">Game <a href="/games/{{$game.ID}}">#{{ inc $key }}</a>{{ if eq $current_game_id $game.ID }} <= current{{ end }}</legend>
-      <table>
-         <tr>
-            <td><span style="text-decoration:underline">Last turn:</span></td>
-            <td><span>{{ $game.LastTurn.Format "02-01-2006 15:04:05" }}</span></td>
-         </tr>
-         <tr>
-            <td><span style="text-decoration:underline">Ships:</span></td>
-            <td><span>{{ len $game.Ships}}</span></td>
-         </tr>
-         <tr>
-            <td><span style="text-decoration:underline">Credits:</span></td>
-            <td><span>{{ $game.Credits}}</span></td>
-         </tr>
-         <tr>
-            <td><span style="text-decoration:underline">Glory:</span></td>
-            <td><span>{{ $game.Glory}}</span></td>
-         </tr>
-         <tr>
-            <td><span style="text-decoration:underline">Your turn:</span></td>
-            <td><span>{{ $game.ServerTurn }}</span></td>
-         </tr>
-         <tr>
-            <td><span style="text-decoration:underline">Online:</span></td>
-            <td><span>{{ $game.Online }}</span></td>
-         </tr>
-      </table>
-      <br/>
-      <button style="background-color:orange;color:white;border-radius:8px;" onclick="confirmGameDeletion({{$game.ID}});">Delete Game?</button>
-   </fieldset>
+<div id="dialogBox" style="top: 0px; display: block;">
+  <div class="dialogTop"></div>
+
+  <div class="dialogMiddle">
+    <div id="RegistrationForm" style="" class="dialogContents">
+      <div class="title">
+        <span style="padding-top:5px;">Welcome, <a href="/" style="padding-right:95px;">{{ .Account.Commander }}</a></span>
+        {{ if not .Account.Auth0Token }}
+        <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Save</a>
+        {{ else }}
+        <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
+        <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Account.Commander }}')">Delete</button>
+{{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
+{{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
+        <span><img src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/></span>
+        <span>Last played: {{ .Account.LastLogout.Format "02-01-2006 15:04:05" }}</span>
+        {{ end }}
+      </div>
+      <div class="container">
+      {{ $current_game_id := .Account.CurrentGameID }}
+      {{ range $key, $game := .Account.Games }}
+        {{ $div_id := "left" }}
+        {{ if eq $key 2 }}
+          {{ $div_id := "right" }}
+        {{ end }}
+        {{ if eq $key 3 }}
+          {{ $div_id := "center" }}
+        {{ end }}
+        <div class="{{ $div_id }}" style="width:250px;">
+          <fieldset>
+            <legend style="color:orange;font-weight:bold;">Game <a href="/games/{{$game.ID}}">#{{ inc $key }}</a>{{ if eq $current_game_id $game.ID }} <= current{{ end }}</legend>
+            <table>
+               <tr>
+                  <td><span style="text-decoration:underline">Last turn:</span></td>
+                  <td><span>{{ $game.LastTurn.Format "02-01-2006 15:04:05" }}</span></td>
+               </tr>
+               <tr>
+                  <td><span style="text-decoration:underline">Ships:</span></td>
+                  <td><span>{{ len $game.Ships}}</span></td>
+               </tr>
+               <tr>
+                  <td><span style="text-decoration:underline">Credits:</span></td>
+                  <td><span>{{ $game.Credits}}</span></td>
+               </tr>
+               <tr>
+                  <td><span style="text-decoration:underline">Glory:</span></td>
+                  <td><span>{{ $game.Glory}}</span></td>
+               </tr>
+               <tr>
+                  <td><span style="text-decoration:underline">Your turn:</span></td>
+                  <td><span>{{ $game.ServerTurn }}</span></td>
+               </tr>
+               <tr>
+                  <td><span style="text-decoration:underline">Online:</span></td>
+                  <td><span>{{ $game.Online }}</span></td>
+               </tr>
+            </table>
+            <br/>
+            <button style="background-color:orange;color:darkred;font-weight:bolder;border-radius:8px;" onclick="confirmGameDeletion({{$game.ID}});">Delete?</button>
+          </fieldset>
+        </div>
+       {{ end }}
+      </div>
+      {{ if (or (lt (len .Account.Games) 3) (eq $current_game_id "__new__")) }}
+      <div class="formbox">
+        <div class="buttonrow" style="margin-top:25px;">
+          <input type="button" onclick="location.href='/games/__new__?ts={{ curr_time }}';" value="New game!" />
+        </div>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+  <div class="dialogBottom"></div>
 </div>
-<p></p>
-{{ end }}

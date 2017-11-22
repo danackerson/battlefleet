@@ -3,29 +3,55 @@ var AUTH0_CLIENT_ID = '{{ .Data.Auth0ClientID }}';
 var AUTH0_DOMAIN = '{{ .Data.Auth0Domain }}';
 var AUTH0_CALLBACK_URL = '{{ .Data.Auth0CallbackURL }}';
 </script>
-{{ if eq .Account.CurrentGameID "__new__" }}
+<div id="dialogBox" style="top: 0px; display: block;">
+  <div class="dialogTop"></div>
+
+  <div class="dialogMiddle">
+		<div id="RegistrationForm" style="" class="dialogContents">
+			<div class="title">
   {{ if eq .Account.Commander "stranger!" }}
-<p>Welcome, {{ .Account.Commander }}</p>
+        <span style="padding-top:5px;">Welcome, {{ .Account.Commander }}</span>
   {{ else }}
-<p>Welcome, <a href="/account/">{{ .Account.Commander }}</a></p>
+        <span style="padding-top:5px;">Welcome, <a href="/account/">{{ .Account.Commander }}</a></span>
   {{ end }}
-<form action="/games/{{ .Account.CurrentGameID }}?ts={{ curr_time }}" method="post">
-  {{ if eq .Account.Commander "stranger!" }}
-  Name: <input type="text" name="cmdrName" required>
+  {{ if not .Account.Auth0Token }}
+    {{ if eq .Account.Commander "stranger!" }}
+        <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Load</a>
+    {{ else }}
+        <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Save</a>
+    {{ end }}
+  {{ else }}
+        <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
   {{ end }}
-  <input type="submit" value="New game!" />
-</form>
-{{ else }}
-<p>Welcome, <a href="/account/">{{ .Account.Commander }}</a></p>
-  {{ $len_games := len .Account.Games }}
-  {{ if lt $len_games 3 }}
-<input type="button" onclick="location.href='/games/__new__?ts={{ curr_time }}';" value="New game!" />
-  {{ end }}
-<input type="button" onclick="location.href='/games/{{ .Account.CurrentGameID }}?ts={{ curr_time }}';" value="Rejoin the fleet!" />
-{{ end }}
-<br/><br/>Or:
-{{ if not .Account.Auth0Token }}
-<button style="background-color:white;color:darkblue;border-radius:8px;" onclick="loginAuth0()">Login</button>
-{{ else }}
-<button style="background-color:darkblue;color:white;border-radius:8px;" onclick="logoutAuth0()">Quit</button>
-{{ end }}
+      </div>
+
+      <form method="post" action="/games/{{ .Account.CurrentGameID }}?ts={{ curr_time }}" name="reg_form" id="reg_form">
+        <div class="formbox">
+        {{ if eq .Account.Commander "stranger!" }}
+          <div class="row">
+            <div class="left"><label for="cmdrName">Name:</label></div>
+            <div class="right">
+              <input type="text" name="cmdrName" required id="reg_user" size="25" value="" tabindex="10">
+            </div>
+          </div>
+        {{ end }}
+          <div class="buttonrow" style="margin-top:25px;">
+        {{ if eq .Account.Commander "stranger!" }}
+            <input type="button" onclick="form.submit();" value="New game!" />
+        {{ else }}
+          {{ if lt (len .Account.Games) 3 }}
+            <input type="button" onclick="location.href='/games/__new__?ts={{ curr_time }}';" value="New game!" />
+          {{ end }}
+          {{ if ne (len .Account.Games) 0 }}
+            <input type="button" onclick="location.href='/games/{{ .Account.CurrentGameID }}?ts={{ curr_time }}';" value="Rejoin the fleet!" />
+          {{ end }}
+        {{ end }}
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <div class="dialogBottom"></div>
+</div>
