@@ -24,7 +24,7 @@ function logoutAuth0(save_games) {
 }
 
 function confirmAccountDeletion(cmdrName) {
-  var confirm = prompt("Are you sure you want to DELETE your account?", "Retype your Commander Name to confirm...");
+  var confirm = prompt("Permanently DELETE your account and all games?", "Retype your Commander Name to confirm...");
   if (confirm == cmdrName) {
     window.location.href = "/account/?action=delete";
   } else if (confirm != null){
@@ -33,7 +33,7 @@ function confirmAccountDeletion(cmdrName) {
 }
 
 function confirmGameDeletion(gameID) {
-  var confirmed = confirm("Are you sure you want to DELETE your game?");
+  var confirmed = confirm("Permanently DELETE your game?");
   if (confirmed) {
     window.location.href = "/games/" + gameID + "?action=delete";
   }

@@ -4,16 +4,19 @@
   <div class="dialogMiddle">
     <div id="RegistrationForm" style="" class="dialogContents">
       <div class="title">
-        <span style="padding-top:5px;">Welcome, <a href="/account/" style="padding-right:95px;">{{ .Account.Commander }}</a></span>
+        {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
+        {{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
+        <span style="padding-top:5px;">Welcome, <a href="/account/">{{ .Account.Commander }}</a>
         {{ if not .Account.Auth0Token }}
-        <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Save</a>
+          <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Save</a>
         {{ else }}
-        <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
-        <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Account.Commander }}')">Delete</button>
-{{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
-{{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
-        <span><img src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/></span>
-        <span>Last played: {{ .Account.LastLogout.Format "02-01-2006 15:04:05" }}</span>
+          <img style="padding-left:5px;padding-right:95px;" src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/>
+          <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
+        </span>
+        <span style="display:block;clear:left;">
+          Last saved: {{ .Account.LastLogout.Format "02-01-2006 15:04:05" }}
+          <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Account.Commander }}');">Delete</button>
+        </span>
         {{ end }}
       </div>
 
@@ -26,10 +29,10 @@
         </div>
         <div class="buttonrow" style="margin-top:25px;">
           <div v-if="connectionState != 'OPEN'">
-            <button class="gameToggle" onclick="connectServer();">Engage!</button>
+            <button class="gameToggle" onclick="connectServer();this.blur();">Engage!</button>
           </div>
           <div v-else>
-            <button class="gameToggle" onclick="disconnectServer();">Disengage!</button>
+            <button class="gameToggle" onclick="disconnectServer();this.blur();">Disengage!</button>
           </div>
         </div>
       </div>

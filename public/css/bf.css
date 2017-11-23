@@ -91,7 +91,7 @@ a:hover, a:active {
 #dialogBox #app,
 #dialogBox .container {
   font-family: "Play script=all rev=1";
-  padding: 15px 0;
+  padding: 0;
   width:100%;
   text-align:center;
   overflow: hidden;
@@ -162,6 +162,10 @@ a:hover, a:active {
 	height: 17px;
 }
 
+#dialogBox .formbox .deleteaccount {
+  font-family: "Play script=all rev=1";
+  margin-top:10px;
+}
 #dialogBox .formbox .buttonrow input[type=button] {
 	background: url(/images/dialog_button_register.png) center top no-repeat;
 	height: 50px;
@@ -174,7 +178,6 @@ a:hover, a:active {
 }
 #dialogBox #app .buttonrow .gameToggle,
 #dialogBox .formbox .buttonrow input[type=button] {
-
 	color:#2fd42f;
 	font-family: "Play script=all rev=1";
 	text-align: center;
