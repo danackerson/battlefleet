@@ -88,6 +88,7 @@ a:hover, a:active {
 	color: #00c6ff;
 }
 
+#dialogBox #app,
 #dialogBox .container {
   font-family: "Play script=all rev=1";
   padding: 15px 0;
@@ -163,8 +164,17 @@ a:hover, a:active {
 
 #dialogBox .formbox .buttonrow input[type=button] {
 	background: url(/images/dialog_button_register.png) center top no-repeat;
-	width:280px;
 	height: 50px;
+  width: 318px;
+}
+#dialogBox #app .buttonrow .gameToggle {
+  background: url(/images/button-register.png) center top no-repeat;
+	height: 70px;
+  width: 318px;
+}
+#dialogBox #app .buttonrow .gameToggle,
+#dialogBox .formbox .buttonrow input[type=button] {
+
 	color:#2fd42f;
 	font-family: "Play script=all rev=1";
 	text-align: center;
@@ -179,6 +189,10 @@ a:hover, a:active {
 	margin: 0 auto;
 }
 
+#dialogBox #app .buttonrow .gameToggle:hover {
+  background-position: 0 -70px;
+  color: #abffb1;
+}
 #dialogBox .formbox .buttonrow input[type=button]:hover {
 	background-position: center bottom;
 	color: #abffb1;

@@ -1,18 +1,40 @@
-<div id="app">
-  <p>Go <a href="/">home</a></p>
-  <p>Welcome, <a href="/account/">{{ .Account.Commander }}</a></p>
+<div id="dialogBox" style="top: 0px; display: block;">
+  <div class="dialogTop"></div>
 
-  <div v-if="connectionState != 'OPEN'">
-    <button onclick="connectServer();">Engage!</button>
-  </div>
-  <div v-else>
-    <button onclick="disconnectServer();">Disengage!</button>
+  <div class="dialogMiddle">
+    <div id="RegistrationForm" style="" class="dialogContents">
+      <div class="title">
+        <span style="padding-top:5px;">Welcome, <a href="/account/" style="padding-right:95px;">{{ .Account.Commander }}</a></span>
+        {{ if not .Account.Auth0Token }}
+        <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Save</a>
+        {{ else }}
+        <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
+        <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Account.Commander }}')">Delete</button>
+{{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
+{{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
+        <span><img src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/></span>
+        <span>Last played: {{ .Account.LastLogout.Format "02-01-2006 15:04:05" }}</span>
+        {{ end }}
+      </div>
+
+      <div id="app">
+        <div class="group connectionState">
+          Connection-State is: <em id="connection-state">${connectionState}</em>
+        </div>
+        <div class="group serverTime">
+          Server-Time is: <p id="serverTime">${serverTime}</p>
+        </div>
+        <div class="buttonrow" style="margin-top:25px;">
+          <div v-if="connectionState != 'OPEN'">
+            <button class="gameToggle" onclick="connectServer();">Engage!</button>
+          </div>
+          <div v-else>
+            <button class="gameToggle" onclick="disconnectServer();">Disengage!</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="group connectionState">
-    Connection-State is: <em id="connection-state">${connectionState}</em>
-  </div>
-  <div class="group serverTime">
-    Server-Time is: <p id="serverTime">${serverTime}</p>
-  </div>
+  <div class="dialogBottom"></div>
 </div>
