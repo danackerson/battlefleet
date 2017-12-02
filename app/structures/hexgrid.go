@@ -1,7 +1,5 @@
 package structures
 
-// Forked from iced @ https://github.com/gojuno/go.hexgrid ... Many thanks!
-// I needed to export all the variables inside the structs for session encoding and persistence
 import (
 	"math"
 )
