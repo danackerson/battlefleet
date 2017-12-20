@@ -45,12 +45,6 @@ type Region struct {
 	lookup map[int64]int
 }
 
-// OrientationPointy means hex is pointy end up
-var OrientationPointy = Orientation{
-	F:          [4]float64{math.Sqrt(3.0), math.Sqrt(3.0) / 2.0, 0.0, 3.0 / 2.0},
-	B:          [4]float64{math.Sqrt(3.0) / 3.0, -1.0 / 3.0, 0.0, 2.0 / 3.0},
-	StartAngle: 0.5}
-
 // OrientationFlat means hex is flat end up
 var OrientationFlat = Orientation{
 	F:          [4]float64{3.0 / 2.0, 0.0, math.Sqrt(3.0) / 2.0, math.Sqrt(3.0)},
@@ -58,7 +52,6 @@ var OrientationFlat = Orientation{
 	StartAngle: 0.0}
 
 func init() {
-	prehashAngles(&OrientationPointy)
 	prehashAngles(&OrientationFlat)
 }
 
@@ -165,8 +158,8 @@ func (fhex FractionalHex) ToHex() Hex {
 }
 
 // MakeGrid exported more
-func MakeGrid(orientation Orientation, origin Point, size Point) *Grid {
-	return &Grid{Orientation: orientation, Origin: origin, Size: size}
+func MakeGrid(origin Point, size Point) *Grid {
+	return &Grid{Orientation: OrientationFlat, Origin: origin, Size: size}
 }
 
 // HexAt exported

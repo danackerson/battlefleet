@@ -35,7 +35,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	account := getAccount(r, w, session)
+	account := getAccount(r, session)
 	if account != nil {
 		gameUUID := requestParams["gameid"]
 		action, ok := r.URL.Query()["action"]
@@ -60,8 +60,12 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		redirected := setupGame(r, w, session, account, gameUUID)
 		if !redirected {
 			renderer.HTML(w, http.StatusOK, "game",
-				map[string]interface{}{"Account": account, "Data": app.AuthZeroData})
+				map[string]interface{}{"Account": account, "Data": app.AuthZeroData, "DevEnv": !app.ProdSession})
 		}
+	} else {
+		t, _ := template.New("errorPage").Parse(errorPage)
+		t.Execute(w, "New accounts require a Commander name and '"+app.DefaultCmdrName+"' is not allowed.")
+		http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 	}
 }
 
@@ -83,7 +87,6 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 			}
 		} else {
 			t, _ := template.New("errorPage").Parse(errorPage)
-			log.Println("hello?!")
 			errorString := "You neither own Game ID:<span style='color:orange;'>" + gameUUID + "</span> nor have you been invited to join."
 			t.Execute(w, template.JS(errorString))
 			http.Redirect(w, r, "/", http.StatusPreconditionRequired)

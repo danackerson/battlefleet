@@ -1,3 +1,4 @@
+<script async src="/js/ws.js"></script>
 <div id="dialogBox" style="top: 0px; display: block;">
   <div class="dialogTop"></div>
 
@@ -24,8 +25,13 @@
         <div class="group connectionState">
           Connection-State is: <em id="connection-state">${connectionState}</em>
         </div>
-        <div class="group serverTime">
+        <!--<div class="group serverTime">
           Server-Time is: <p id="serverTime">${serverTime}</p>
+        </div>-->
+        <div class="group hexGrid">
+          <li v-for="(item, index) in game">
+            ${index}: ${item}
+          </li>
         </div>
         <div class="buttonrow" style="margin-top:25px;">
           <div v-if="connectionState != 'OPEN'">

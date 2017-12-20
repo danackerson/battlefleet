@@ -42,7 +42,7 @@ func NewGame(gameID string, ownerID bson.ObjectId) *Game {
 
 	center := MakePoint(0, 0)
 	size := MakePoint(11, 11)
-	grid := MakeGrid(OrientationFlat, center, size)
+	grid := MakeGrid(center, size)
 
 	game := Game{
 		ID:         gameID,

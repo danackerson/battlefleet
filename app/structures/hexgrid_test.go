@@ -13,20 +13,11 @@ func validateHex(t *testing.T, e Hex, r Hex) {
 
 // TestFlat now commented
 func TestFlat(t *testing.T) {
-	grid := MakeGrid(OrientationFlat, MakePoint(10, 20), MakePoint(20, 10))
+	grid := MakeGrid(MakePoint(10, 20), MakePoint(20, 10))
 	validateHex(t, MakeHex(0, 37), grid.HexAt(MakePoint(13, 666)))
 	validateHex(t, MakeHex(22, -11), grid.HexAt(MakePoint(666, 13)))
 	validateHex(t, MakeHex(-1, -39), grid.HexAt(MakePoint(-13, -666)))
 	validateHex(t, MakeHex(-22, 9), grid.HexAt(MakePoint(-666, -13)))
-}
-
-// TestPointy now commented
-func TestPointy(t *testing.T) {
-	grid := MakeGrid(OrientationPointy, MakePoint(10, 20), MakePoint(20, 10))
-	validateHex(t, MakeHex(-21, 43), grid.HexAt(MakePoint(13, 666)))
-	validateHex(t, MakeHex(19, 0), grid.HexAt(MakePoint(666, 13)))
-	validateHex(t, MakeHex(22, -46), grid.HexAt(MakePoint(-13, -666)))
-	validateHex(t, MakeHex(-19, -2), grid.HexAt(MakePoint(-666, -13)))
 }
 
 func validatePoint(t *testing.T, e Point, r Point, precision float64) {
@@ -36,7 +27,7 @@ func validatePoint(t *testing.T, e Point, r Point, precision float64) {
 }
 
 func TestCoordinatesFlat(t *testing.T) {
-	grid := MakeGrid(OrientationFlat, MakePoint(10, 20), MakePoint(20, 10))
+	grid := MakeGrid(MakePoint(10, 20), MakePoint(20, 10))
 	hex := grid.HexAt(MakePoint(666, 666))
 	validatePoint(t, MakePoint(670.00000, 660.85880), grid.HexCenter(hex), 0.00001)
 	expectedCorners := [6]Point{
@@ -46,23 +37,6 @@ func TestCoordinatesFlat(t *testing.T) {
 		MakePoint(650.00000, 660.85880),
 		MakePoint(660.00000, 652.19854),
 		MakePoint(680.00000, 652.19854)}
-	corners := grid.HexCorners(hex)
-	for i := 0; i < 6; i++ {
-		validatePoint(t, expectedCorners[i], corners[i], 0.00001)
-	}
-}
-
-func TestCoordinatesPointy(t *testing.T) {
-	grid := MakeGrid(OrientationPointy, MakePoint(10, 20), MakePoint(20, 10))
-	hex := grid.HexAt(MakePoint(666, 666))
-	validatePoint(t, MakePoint(650.85880, 665.00000), grid.HexCenter(hex), 0.00001)
-	expectedCorners := [6]Point{
-		MakePoint(668.17930, 670.00000),
-		MakePoint(650.85880, 675.00000),
-		MakePoint(633.53829, 670.00000),
-		MakePoint(633.53829, 660.00000),
-		MakePoint(650.85880, 655.00000),
-		MakePoint(668.17930, 660.00000)}
 	corners := grid.HexCorners(hex)
 	for i := 0; i < 6; i++ {
 		validatePoint(t, expectedCorners[i], corners[i], 0.00001)

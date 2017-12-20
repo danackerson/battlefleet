@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -41,10 +43,10 @@ func ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go serverTime(ws)
+	go serverTime(ws, r)
 }
 
-func serverTime(ws *websocket.Conn) {
+func serverTime(ws *websocket.Conn, r *http.Request) {
 	defer ws.Close()
 
 	for {
@@ -52,19 +54,35 @@ func serverTime(ws *websocket.Conn) {
 		// it's helpful to negotiate client side CLOSE requests
 		// msg types: https://github.com/gorilla/websocket/blob/master/conn.go#L61
 		messageType, msg, err := ws.ReadMessage()
-		//log.Printf("%d: %s (ERR: %v)", messageType, msg, err)
+		log.Printf("%d: %s (ERR: %v)", messageType, msg, err)
 
 		if messageType != -1 && messageType != 8 {
 			serverTimeBytes := time.Now().Format(time.UnixDate)
-			if err = ws.WriteMessage(websocket.TextMessage, []byte(serverTimeBytes)); err != nil {
+			/*if err = ws.WriteMessage(websocket.TextMessage, []byte(serverTimeBytes)); err != nil {
 				log.Printf("%d: %s (ERR: %s)", messageType, msg, err.Error())
 				return
+			}*/
+
+			session, sessionErr := app.SessionStore.Get(r, app.SessionCookieKey)
+			if sessionErr != nil {
+				ws.WriteMessage(websocket.TextMessage, []byte("ERR:"+sessionErr.Error()))
+				return
+			}
+			account := getAccount(r, session)
+			if account != nil {
+				game := account.GetGame()
+				//log.Print(game)
+				b := new(bytes.Buffer)
+				json.NewEncoder(b).Encode(game)
+				ws.WriteMessage(websocket.TextMessage, b.Bytes())
+			} else {
+				ws.WriteMessage(websocket.TextMessage, []byte(serverTimeBytes))
 			}
 		} else {
 			log.Printf("Client hung up...good-bye!\n")
 			return
 		}
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }

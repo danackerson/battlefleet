@@ -52,7 +52,7 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		renderer.HTML(w, http.StatusOK, "account",
-			map[string]interface{}{"Account": account, "Data": app.AuthZeroData})
+			map[string]interface{}{"Account": account, "Data": app.AuthZeroData, "DevEnv": !app.ProdSession})
 	} else {
 		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "You are currently not logged in!")
@@ -61,15 +61,12 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getAccount(r *http.Request, w http.ResponseWriter, session *sessions.Session) *structures.Account {
+func getAccount(r *http.Request, session *sessions.Session) *structures.Account {
 	var account *structures.Account
 
 	if session.Values[app.AccountKey] == nil {
 		if r.FormValue("cmdrName") == "" || r.FormValue("cmdrName") == app.DefaultCmdrName {
 			// new accounts require a CommanderName and 'stranger!' is reserved ;)
-			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, "New accounts require a Commander name and '"+app.DefaultCmdrName+"' is not allowed.")
-			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
 			return nil
 		}
 

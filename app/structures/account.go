@@ -87,6 +87,19 @@ func GetAccount(accountID bson.ObjectId) *Account {
 	return account
 }
 
+func (account *Account) GetGame() *Game {
+	currentGame := &Game{}
+
+	for _, game := range account.Games {
+		if game.ID == account.CurrentGameID {
+			currentGame = game
+			break
+		}
+	}
+
+	return currentGame
+}
+
 func removeAccountFromActiveSessions(account Account) {
 	for index, accountToCheck := range onlineAccounts {
 		if accountToCheck.ID == account.ID {

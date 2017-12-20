@@ -19,9 +19,13 @@
       <meta name="googlebot" content="noindex, nofollow">
 
       <link rel="stylesheet" href="/css/bf.css"/>
-      <script src="https://cdn.auth0.com/js/auth0/8.10.1/auth0.min.js"></script>
-      <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
-      <script type="text/javascript" src="/js/bf.js"></script>
+      <script async src="https://cdn.auth0.com/js/auth0/8.10.1/auth0.min.js"></script>
+      {{ if .DevEnv }}
+      <script async src="https://unpkg.com/vue/dist/vue.js"></script>
+      {{ else }}
+      <script async src="https://unpkg.com/vue/dist/vue.min.js"></script>
+      {{ end }}
+      <script async type="text/javascript" src="/js/bf.js"></script>
 
       <title>Battle Fleet!</title>
 
