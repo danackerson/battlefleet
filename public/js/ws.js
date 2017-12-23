@@ -1,3 +1,7 @@
+var wsApp;
+
+var userDisconnect = false;
+
 // see https://github.com/mpalmerlee/HexagonTools
 // https://www.redblobgames.com/grids/hexagons/
 function disconnectServer() {
@@ -16,9 +20,8 @@ function connectServer() {
 
     if (wsApp.$data.ws.readyState != WebSocket.CLOSED) {
       wsApp.$data.ws.addEventListener('message', function(e) {
-          //wsApp.serverTime = e.data;
-          wsApp.game = JSON.parse(e.data);
-          wsApp.workWithGameData();
+          wsApp.game = JSON.parse(e.data); // MUST set wsApp.game for vue actions in game.tmpl
+          bootstrapGameData(wsApp.game);
           wsApp.$data.ws.send("ACK");
       });
 
@@ -53,6 +56,10 @@ function connectServer() {
   }
 }
 
+function bootstrapGameData(game) {
+  alert(game["LastTurn"]);
+}
+
 window.onload = function(){
   wsApp = new Vue({
     el: '#app',
@@ -62,10 +69,5 @@ window.onload = function(){
       connectionState: 'INITIAL',
       game: 'Loading...',
     },
-    methods: {
-      workWithGameData: function() {
-        alert(this.game["ID"]);
-      }
-    }
   });
 }

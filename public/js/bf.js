@@ -1,7 +1,3 @@
-var wsApp;
-
-var userDisconnect = false;
-
 function loginAuth0() {
   var webAuth = new auth0.WebAuth({
     domain: AUTH0_DOMAIN,

@@ -71,6 +71,7 @@ func serverTime(ws *websocket.Conn, r *http.Request) {
 			account := getAccount(r, session)
 			if account != nil {
 				game := account.GetGame()
+				game.LastTurn = time.Now()
 				//log.Print(game)
 				b := new(bytes.Buffer)
 				json.NewEncoder(b).Encode(game)
