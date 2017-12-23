@@ -9,9 +9,10 @@ import (
 )
 
 func main() {
-	app.Init(false)
+	isUnitTest := false // main() is only called from full application start
+	app.Init(isUnitTest)
 
-	router := routes.SetUpMuxHandlers(false)
+	router := routes.SetUpMuxHandlers(isUnitTest)
 	n := negroni.Classic()
 	n.UseHandler(router)
 

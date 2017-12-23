@@ -35,7 +35,7 @@ const errorPage = `
 `
 
 // SetUpMuxHandlers sets up the router
-func SetUpMuxHandlers(isTest bool) *mux.Router {
+func SetUpMuxHandlers(isUnitTest bool) *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/", HomeHandler)
 	router.HandleFunc("/callback", CallbackHandler)
@@ -49,7 +49,7 @@ func SetUpMuxHandlers(isTest bool) *mux.Router {
 	})
 
 	templateDir := os.Getenv("TEMPLATE_DIR")
-	if isTest {
+	if isUnitTest {
 		templateDir = "templates"
 	}
 	renderer = render.New(render.Options{
