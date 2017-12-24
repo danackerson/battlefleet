@@ -17,7 +17,6 @@ function connectServer() {
       scheme = "ws:";
     }
     wsApp.$data.ws = new WebSocket(scheme + '//' + window.location.host + '/wsInit');
-
     if (wsApp.$data.ws.readyState != WebSocket.CLOSED) {
       wsApp.$data.ws.addEventListener('message', function(e) {
           wsApp.game = JSON.parse(e.data); // MUST set wsApp.game for vue actions in game.tmpl
@@ -57,7 +56,7 @@ function connectServer() {
 }
 
 function bootstrapGameData(game) {
-  alert(game["LastTurn"]);
+  //alert(game["LastTurn"]);
 }
 
 window.onload = function(){

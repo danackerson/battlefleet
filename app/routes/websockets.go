@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -32,6 +30,7 @@ func ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
+		EnableCompression: true,
 	}
 
 	ws, err := upgrader.Upgrade(w, r, w.Header())
@@ -43,10 +42,10 @@ func ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go serverTime(ws, r)
+	go retrieveGame(ws, r)
 }
 
-func serverTime(ws *websocket.Conn, r *http.Request) {
+func retrieveGame(ws *websocket.Conn, r *http.Request) {
 	defer ws.Close()
 
 	for {
@@ -72,10 +71,7 @@ func serverTime(ws *websocket.Conn, r *http.Request) {
 			if account != nil {
 				game := account.GetGame()
 				game.LastTurn = time.Now()
-				//log.Print(game)
-				b := new(bytes.Buffer)
-				json.NewEncoder(b).Encode(game)
-				ws.WriteMessage(websocket.TextMessage, b.Bytes())
+				ws.WriteJSON(game)
 			} else {
 				ws.WriteMessage(websocket.TextMessage, []byte(serverTimeBytes))
 			}
@@ -84,6 +80,6 @@ func serverTime(ws *websocket.Conn, r *http.Request) {
 			return
 		}
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
