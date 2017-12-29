@@ -87,6 +87,7 @@ func GetAccount(accountID bson.ObjectId) *Account {
 	return account
 }
 
+// GetGame returns the current active game from chosen account
 func (account *Account) GetGame() *Game {
 	currentGame := &Game{}
 

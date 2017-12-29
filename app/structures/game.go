@@ -40,9 +40,9 @@ func NewGame(gameID string, ownerID bson.ObjectId) *Game {
 		Class:      "low",
 	}
 
-	center := MakePoint(0, 0)
+	origin := MakePoint(0, 0)
 	size := MakePoint(11, 11)
-	grid := MakeGrid(center, size)
+	grid := MakeGrid(origin, size)
 
 	game := Game{
 		ID:         gameID,

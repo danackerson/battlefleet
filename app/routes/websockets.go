@@ -30,7 +30,7 @@ func ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
-		EnableCompression: true,
+		EnableCompression: true, // NOTE: Traefik has bug that doesn't pass thru :(
 	}
 
 	ws, err := upgrader.Upgrade(w, r, w.Header())

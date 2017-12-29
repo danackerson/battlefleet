@@ -10,10 +10,29 @@ type Point struct {
 	Y float64
 }
 
+// Hex describes a regular hexagon with Cube Coordinates (although the S coordinate is computed on the constructor)
+// It's also easy to reference them as axial (trapezoidal coordinates):
+// - R represents the vertical axis
+// - Q the diagonal one
+// - S can be ignored
+// For additional reference on these coordinate systems: http://www.redblobgames.com/grids/hexagons/#coordinates
+//           _ _
+//         /     \
+//    _ _ /(0,-1) \ _ _
+//  /     \  -R   /     \
+// /(-1,0) \ _ _ /(1,-1) \
+// \  -Q   /     \       /
+//  \ _ _ / (0,0) \ _ _ /
+//  /     \       /     \
+// /(-1,1) \ _ _ / (1,0) \
+// \       /     \  +Q   /
+//  \ _ _ / (0,1) \ _ _ /
+//        \  +R   /
+//         \ _ _ /
 // Hex is now exported
 type Hex struct {
-	Q int64
-	R int64
+	Q int64 // column
+	R int64 // row
 }
 
 // FractionalHex is now commented
@@ -38,17 +57,10 @@ type Grid struct {
 	Size        Point
 }
 
-// Region is now commented
-type Region struct {
-	grid   *Grid
-	hexes  []Hex
-	lookup map[int64]int
-}
-
-// OrientationFlat means hex is flat end up
+// OrientationFlat means hex is flat end up: https://www.redblobgames.com/grids/hexagons/implementation.html#layout
 var OrientationFlat = Orientation{
-	F:          [4]float64{3.0 / 2.0, 0.0, math.Sqrt(3.0) / 2.0, math.Sqrt(3.0)},
-	B:          [4]float64{2.0 / 3.0, 0.0, -1.0 / 3.0, math.Sqrt(3.0) / 3.0},
+	F:          [4]float64{3.0 / 2.0, 0.0, math.Sqrt(3.0) / 2.0, math.Sqrt(3.0)}, // Forward 2x2 matrix
+	B:          [4]float64{2.0 / 3.0, 0.0, -1.0 / 3.0, math.Sqrt(3.0) / 3.0},     // Backward 2x2 (inverse) matrix
 	StartAngle: 0.0}
 
 func init() {
@@ -124,12 +136,12 @@ func MakeFractionalHex(q float64, r float64) FractionalHex {
 	return FractionalHex{Q: q, R: r}
 }
 
-// GetQ returns the Q
+// GetQ returns the diagonal axis of the hex
 func (fhex FractionalHex) GetQ() float64 {
 	return fhex.Q
 }
 
-// GetR returns the radius of the hex
+// GetR returns the vertical axis of the hex
 func (fhex FractionalHex) GetR() float64 {
 	return fhex.R
 }
