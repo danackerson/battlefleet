@@ -1,49 +1,88 @@
 <script async src="/js/ws.js"></script>
-<div id="dialogBox" style="top: 0px; display: block;">
-  <div class="dialogTop"></div>
 
-  <div class="dialogMiddle">
-    <div id="RegistrationForm" style="" class="dialogContents">
-      <div class="title">
-        {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
-        {{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
-        <span style="padding-top:5px;">Welcome, <a href="/account/">{{ .Account.Commander }}</a>
-        {{ if not .Account.Auth0Token }}
-          <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Save</a>
-        {{ else }}
-          <img style="padding-left:5px;padding-right:95px;" src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/>
-          <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
-        </span>
-        <span style="display:block;clear:left;">
-          Last saved: {{ .Account.LastLogout.Format "02-01-2006 15:04:05" }}
-          <button style="background-color:red;color:white;border-radius:8px;" onclick="confirmAccountDeletion('{{ .Account.Commander }}');">Delete</button>
-        </span>
-        {{ end }}
+
+<div id="dialogBox" style="top: 10px; display: block;">
+  <div class="title" style="margin-bottom: 0px;">
+    {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
+    {{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
+    <span style="padding-top:5px;">Welcome, <a href="/account/" tabindex="1">{{ .Account.Commander }}</a>
+    {{ if not .Account.Auth0Token }}
+      <a href="javascript:loginAuth0();" class="saveButton" tabindex="2">Save</a>
+    {{ else }}
+      <img style="padding-left:5px;padding-right:95px;" src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/>
+      <a href="javascript:logoutAuth0();" class="saveButton" tabindex="2">Quit</a>
+    </span>
+    {{ end }}
+  </div>
+  <div id="app">
+    <div class="buttonrow">
+      <div v-if="connectionState != 'OPEN'">
+        <button class="gameToggle" onclick="connectServer();this.blur();">Engage!</button>
       </div>
-
-      <div id="app">
-        <div class="group connectionState">
-          Connection-State is: <em id="connection-state">${connectionState}</em>
-        </div>
-        <!--<div class="group serverTime">
-          Server-Time is: <p id="serverTime">${serverTime}</p>
-        </div>-->
-        <div class="group hexGrid">
-          <li v-for="(item, index) in game">
-            ${index}: ${item}
-          </li>
-        </div>
-        <div class="buttonrow" style="margin-top:25px;">
-          <div v-if="connectionState != 'OPEN'">
-            <button class="gameToggle" onclick="connectServer();this.blur();">Engage!</button>
-          </div>
-          <div v-else>
-            <button class="gameToggle" onclick="disconnectServer();this.blur();">Disengage!</button>
-          </div>
-        </div>
+      <div v-else>
+        <button class="gameToggle" onclick="disconnectServer();this.blur();">Disengage!</button>
       </div>
     </div>
   </div>
-
-  <div class="dialogBottom"></div>
 </div>
+
+<div id="grid"></div>
+<!-- <li v-for="(item, index) in game">
+  ${index}: ${item}
+</li> -->
+<script type="text/javascript" src="/js/three.min.js"></script>
+<script type="text/javascript" src="/js/OrbitControls.js"></script>
+<script type="text/javascript" src="/js/hex-grid.min.js"></script>
+<script type="text/javascript">
+window.addEventListener('load', function(evt) {
+  // https://github.com/vonWolfehaus/von-grid/blob/master/src/utils/Scene.js
+  var scene = new vg.Scene({
+    element: document.getElementById('grid'),
+    //cameraPosition: {x:0, y:300, z:250},
+    cameraPosition: {x:120, y:160, z:90},
+    //cameraType: 'OrthographicCamera',
+  }, true); // true|false for OrbitControls.js
+
+  // this constructs the cells in grid coordinate space
+  var grid = new vg.HexGrid({
+    cellSize: 8 // size of individual cells
+  });
+
+  grid.generate({
+    size: 5 // size of the board +1
+  });
+
+  var mouse = new vg.MouseCaster(scene.container, scene.camera);
+  var board = new vg.Board(grid);
+
+  // this will generate extruded hexagonal tiles
+  board.generateTilemap({
+    tileScale: 0.96 // you might have to scale the tile so the extruded geometry fits the cell size perfectly
+  });
+
+  scene.add(board.group);
+  scene.focusOn(board.group);
+
+  var vec = new THREE.Vector3();
+
+  mouse.signal.add(function(evt, tile) {
+    if (evt === vg.MouseCaster.CLICK) {
+      //tile.toggle();
+      //alert("Q:" + tile.cell.q + ", R:" + tile.cell.r);
+      // or we can use the mouse's raw coordinates to access the cell directly, just for fun:
+      var cell = board.grid.pixelToCell(mouse.position);
+      var t = board.getTileAtCell(cell);
+      if (t) t.toggle();
+      //alert("Q:" + t.cell.q + ", R:" + t.cell.r);
+    }
+  }, this);
+
+  update();
+
+  function update() {
+    mouse.update();
+    scene.render();
+    requestAnimationFrame(update);
+  }
+});
+</script>

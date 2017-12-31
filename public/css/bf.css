@@ -17,6 +17,12 @@ a:hover, a:active {
     text-decoration: underline;
 }
 
+#grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 @font-face {
   font-family: 'Play script=all rev=1';
   font-style: normal;
@@ -201,7 +207,7 @@ a:hover, a:active {
 	color: #abffb1;
 }
 
-#dialogBox a.saveButton {
+a.saveButton {
 	background:url(/images/button-login.png) 0 0 no-repeat;
 	display: inline-block;
 	width: 130px;
@@ -219,6 +225,6 @@ a:hover, a:active {
 	padding: 0 5px;
 }
 
-#dialogBox a.saveButton:hover {
+a.saveButton:hover {
 	background-position: 0 -24px;
 }
