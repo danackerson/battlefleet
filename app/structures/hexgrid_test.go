@@ -43,13 +43,65 @@ func TestCoordinatesFlat(t *testing.T) {
 	}
 }
 
-// TestNeighbors now commented
-func TestNeighbors(t *testing.T) {
-	/*grid := MakeGrid(OrientationFlat, MakePoint(10, 20), MakePoint(20, 10))
-	hex := grid.HexAt(MakePoint(666, 666))
-	expectedNeighbors := [18]int64{
-		920, 922, 944, 915, 921, 923, 945, 916, 918,
-		926, 948, 917, 919, 925, 927, 960, 962, 968}
-	neighbors := grid.HexNeighbors(hex, 2)*/
-	// TODO: check it
+// TestNeighborsOfOuterEdge verifies all Hex cells around outer left tile {-5,5}
+func TestNeighborsOfOuterEdge(t *testing.T) {
+	// 5 cells/tiles radiating outward from Origin point (0,0)
+	// make 5 rings total and 1+6+12+18+24+30=91 cells/tiles
+	size := 5
+	origin := MakePoint(0, 0)
+
+	grid := MakeGrid(origin, MakePoint(float64(size), float64(size)))
+	hex := grid.HexAt(MakePoint(-35, 25)) // outer, upper left corner point on grid
+	neighbors := grid.HexNeighbors(hex, 1)
+
+	// around outside corner tile, we have 3 tiles around it
+	expectedNeighbors := 3
+	if expectedNeighbors != len(neighbors) {
+		t.Errorf("expected Grid of size %d to have %d neighbors but got %d", size, expectedNeighbors, len(neighbors))
+	}
+
+	firstHex := &Hex{Q: -5, R: 4}
+	lastHex := &Hex{Q: -4, R: 5}
+	if neighbors[0] != *firstHex {
+		t.Errorf("expected first neighbor tile to be Hex{Q:-5, R:4} but got Hex{Q:%d, R:%d}\n", neighbors[0].GetQ(), neighbors[0].GetR())
+	}
+	if neighbors[expectedNeighbors-1] != *lastHex {
+		t.Errorf("expected last neighbor tile to be Hex{Q:-4, R:5} but got Hex{Q:%d, R:%d}\n", neighbors[0].GetQ(), neighbors[0].GetR())
+	}
+
+	/* All tiles in size 5 grid
+	for index, hex := range neighbors {
+		log.Printf("neighbor[%d]: Hex {Q: %d, R: %d}\n", index, hex.GetQ(), hex.GetR())
+	}*/
+}
+
+// TestNeighborsOfOrigin verifies all Hex cells around game grid
+func TestNeighborsOfOrigin(t *testing.T) {
+	// 5 cells/tiles radiating outward from Origin point (0,0)
+	// make 5 rings total and 1+6+12+18+24+30=91 cells/tiles
+	size := 5
+	origin := MakePoint(0, 0)
+
+	grid := MakeGrid(origin, MakePoint(float64(size), float64(size)))
+	hex := grid.HexAt(origin) // Origin point Q:0,R:0 in middle of grid
+	neighbors := grid.HexNeighbors(hex, int64(size))
+
+	// in Grid of size 5, we have 90 tiles around Origin tile
+	expectedNeighbors := 90
+	if expectedNeighbors != len(neighbors) {
+		t.Errorf("expected Grid of size %d to have %d neighbors but got %d", size, expectedNeighbors, len(neighbors))
+	}
+	firstHex := &Hex{Q: -5, R: 0}
+	lastHex := &Hex{Q: 5, R: 0}
+	if neighbors[0] != *firstHex {
+		t.Errorf("expected first neighbor tile to be Hex{Q:-5, R:0} but got Hex{Q:%d, R:%d}\n", neighbors[0].GetQ(), neighbors[0].GetR())
+	}
+	if neighbors[expectedNeighbors-1] != *lastHex {
+		t.Errorf("expected last neighbor tile to be Hex{Q:5, R:0} but got Hex{Q:%d, R:%d}\n", neighbors[0].GetQ(), neighbors[0].GetR())
+	}
+
+	/* All tiles in size 5 grid
+	for index, hex := range neighbors {
+		log.Printf("neighbor[%d]: Hex {Q: %d, R: %d}\n", index, hex.GetQ(), hex.GetR())
+	}*/
 }

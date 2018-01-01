@@ -44,8 +44,10 @@ window.addEventListener('load', function(evt) {
   }, true); // true|false for OrbitControls.js
 
   // this constructs the cells in grid coordinate space
+  // https://github.com/vonWolfehaus/von-grid/blob/master/src/grids/HexGrid.js#L2
   var grid = new vg.HexGrid({
-    cellSize: 8 // size of individual cells
+    cellSize: 8 // size of individual cells/tiles
+    // https://github.com/vonWolfehaus/von-grid/blob/master/src/grids/Cell.js
   });
 
   grid.generate({
@@ -67,13 +69,13 @@ window.addEventListener('load', function(evt) {
 
   mouse.signal.add(function(evt, tile) {
     if (evt === vg.MouseCaster.CLICK) {
-      //tile.toggle();
-      //alert("Q:" + tile.cell.q + ", R:" + tile.cell.r);
-      // or we can use the mouse's raw coordinates to access the cell directly, just for fun:
+      tile.toggle();
+      alert("Q:" + tile.cell.q + ", R:" + tile.cell.r);
+      /*or we can use the mouse's raw coordinates to access the cell directly, just for fun:
       var cell = board.grid.pixelToCell(mouse.position);
       var t = board.getTileAtCell(cell);
       if (t) t.toggle();
-      //alert("Q:" + t.cell.q + ", R:" + t.cell.r);
+      //alert("Q:" + t.cell.q + ", R:" + t.cell.r);*/
     }
   }, this);
 

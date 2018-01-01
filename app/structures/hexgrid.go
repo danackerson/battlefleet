@@ -10,6 +10,8 @@ type Point struct {
 	Y float64
 }
 
+// original: https://github.com/gojuno/go.hexgrid/blob/master/hexgrid.go
+
 // Hex describes a regular hexagon with Cube Coordinates (although the S coordinate is computed on the constructor)
 // It's also easy to reference them as axial (trapezoidal coordinates):
 // - R represents the vertical axis
@@ -146,7 +148,7 @@ func (fhex FractionalHex) GetR() float64 {
 	return fhex.R
 }
 
-// GetS returns the diameter?
+// GetS returns
 func (fhex FractionalHex) GetS() float64 {
 	return -(fhex.Q + fhex.R)
 }
@@ -202,7 +204,7 @@ func (grid *Grid) HexCorners(hex Hex) [6]Point {
 	return corners
 }
 
-// HexNeighbors lets us see all the neighbor hexes
+// HexNeighbors lets us see all the neighbor hexes. Layers are "rings" around pt
 func (grid *Grid) HexNeighbors(hex Hex, layers int64) []Hex {
 	total := (layers + 1) * layers * 3
 	neighbors := make([]Hex, total)
@@ -214,10 +216,27 @@ func (grid *Grid) HexNeighbors(hex Hex, layers int64) []Hex {
 			if q == 0 && r == 0 {
 				continue
 			}
+
 			neighbors[i] = MakeHex(q+hex.GetQ(), r+hex.GetR())
 			i++
 		}
 	}
+
+	// be careful and DON'T return neighbors that DON'T exist in the grid
+	for i := len(neighbors) - 1; i >= 0; i-- {
+		Q := neighbors[i].GetQ()
+		R := neighbors[i].GetR()
+		if Q < 0 {
+			Q = -Q
+		}
+		if R < 0 {
+			R = -R
+		}
+		if Q > int64(grid.Size.GetX()) || R > int64(grid.Size.GetY()) {
+			neighbors = append(neighbors[:i], neighbors[i+1:]...)
+		}
+	}
+
 	return neighbors
 }
 
