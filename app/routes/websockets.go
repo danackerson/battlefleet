@@ -70,7 +70,7 @@ func retrieveGame(ws *websocket.Conn, r *http.Request) {
 			account := getAccount(r, session)
 			if account != nil {
 				game := account.GetGame()
-				game.LastTurn = time.Now()
+				game.LastTurn = time.Now() //.Format("02-01-2006 15:04:05")
 				ws.WriteJSON(game)
 			} else {
 				ws.WriteMessage(websocket.TextMessage, []byte(serverTimeBytes))

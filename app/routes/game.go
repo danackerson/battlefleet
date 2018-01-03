@@ -60,7 +60,10 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		redirected := setupGame(r, w, session, account, gameUUID)
 		if !redirected {
 			renderer.HTML(w, http.StatusOK, "game",
-				map[string]interface{}{"Account": account, "Data": app.AuthZeroData, "DevEnv": !app.ProdSession})
+				map[string]interface{}{
+					"Account": account, "Data": app.AuthZeroData,
+					"DevEnv": !app.ProdSession, "GridSize": structures.GridSize,
+				})
 		}
 	} else {
 		t, _ := template.New("errorPage").Parse(errorPage)

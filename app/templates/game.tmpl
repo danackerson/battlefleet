@@ -1,20 +1,31 @@
 <script async src="/js/ws.js"></script>
 
-
-<div id="dialogBox" style="top: 10px; display: block;">
-  <div class="title" style="margin-bottom: 0px;">
-    {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
-    {{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
-    <span style="padding-top:5px;">Welcome, <a href="/account/" tabindex="1">{{ .Account.Commander }}</a>
-    {{ if not .Account.Auth0Token }}
-      <a href="javascript:loginAuth0();" class="saveButton" tabindex="2">Save</a>
-    {{ else }}
-      <img style="padding-left:5px;padding-right:95px;" src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}" height="18px" width="18px"/>
-      <a href="javascript:logoutAuth0();" class="saveButton" tabindex="2">Quit</a>
-    </span>
-    {{ end }}
+<!-- TODO
+- begin rendering info boxes left|right of "grid"
+-- Ship info
+-- Power crystals, etc.
+- render User ship(s) on grid
+-- select + move ship on grid
+-->
+<div id="app">
+  <div style="float:left; width:15%; background-color:gray;">
+    <span>left</span>
   </div>
-  <div id="app">
+
+  <div id="dialogBox" style="top: 10px; display:block;">
+    <div class="title" style="margin-bottom: 0px;">
+      {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
+      {{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
+      <span style="padding-top:5px;">Welcome, <a href="/account/" tabindex="1">{{ .Account.Commander }}</a>
+      {{ if not .Account.Auth0Token }}
+        <a href="javascript:loginAuth0();" class="saveButton" tabindex="2">Save</a>
+      {{ else }}
+        <img class="userProfilePic" src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}"/>
+        <a href="javascript:logoutAuth0();" class="saveButton" tabindex="2">Quit</a>
+      {{ end }}
+      </span>
+    </div>
+
     <div class="buttonrow">
       <div v-if="connectionState != 'OPEN'">
         <button class="gameToggle" onclick="connectServer();this.blur();">Engage!</button>
@@ -24,22 +35,32 @@
       </div>
     </div>
   </div>
+
+  <div style="float:right; width:15%; background-color:gray; background-color:gray;">
+    <span>Server Time: <p v-if="game.LastTurn" v-text="game.LastTurn"></p></span>
+    <span v-if="connectionState == 'OPEN'">
+      <li v-for="(item, index) in game">
+        ${index}: ${item}
+      </li>
+    </span>
+  </div>
+  <br style="clear: left;" />
 </div>
 
 <div id="grid"></div>
-<!-- <li v-for="(item, index) in game">
-  ${index}: ${item}
-</li> -->
+
 <script type="text/javascript" src="/js/three.min.js"></script>
 <script type="text/javascript" src="/js/OrbitControls.js"></script>
 <script type="text/javascript" src="/js/hex-grid.min.js"></script>
 <script type="text/javascript">
 window.addEventListener('load', function(evt) {
   // https://github.com/vonWolfehaus/von-grid/blob/master/src/utils/Scene.js
+  var baseX = 24 * {{ .GridSize }};
+  var baseY = 32 * {{ .GridSize }};
+  var baseZ = 90;
   var scene = new vg.Scene({
     element: document.getElementById('grid'),
-    //cameraPosition: {x:0, y:300, z:250},
-    cameraPosition: {x:120, y:160, z:90},
+    cameraPosition: {x:baseX, y:baseY, z:baseZ},
     //cameraType: 'OrthographicCamera',
   }, true); // true|false for OrbitControls.js
 
@@ -51,7 +72,7 @@ window.addEventListener('load', function(evt) {
   });
 
   grid.generate({
-    size: 5 // size of the board +1
+    size: {{ .GridSize }} // size of the board +1
   });
 
   var mouse = new vg.MouseCaster(scene.container, scene.camera);
@@ -70,7 +91,7 @@ window.addEventListener('load', function(evt) {
   mouse.signal.add(function(evt, tile) {
     if (evt === vg.MouseCaster.CLICK) {
       tile.toggle();
-      alert("Q:" + tile.cell.q + ", R:" + tile.cell.r);
+      //alert("Q:" + tile.cell.q + ", R:" + tile.cell.r);
       /*or we can use the mouse's raw coordinates to access the cell directly, just for fun:
       var cell = board.grid.pixelToCell(mouse.position);
       var t = board.getTileAtCell(cell);

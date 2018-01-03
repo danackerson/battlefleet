@@ -10,6 +10,11 @@ type Point struct {
 	Y float64
 }
 
+// TotalHexagons returns total number of hexagons for given grid size
+func TotalHexagons(gridSize int) int {
+	return int(3*gridSize*(gridSize-1) + 1)
+}
+
 // original: https://github.com/gojuno/go.hexgrid/blob/master/hexgrid.go
 
 // Hex describes a regular hexagon with Cube Coordinates (although the S coordinate is computed on the constructor)
