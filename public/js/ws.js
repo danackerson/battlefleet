@@ -56,8 +56,7 @@ function connectServer() {
 }
 
 function bootstrapGameData(game) {
-  //alert(game["LastTurn"]);
-  // TODO: render game["Ships"]
+  // TODO: if nothing has changed, don't renderShips! (hash last state and check?)
   renderShips(game["Ships"]);
 }
 
@@ -73,6 +72,9 @@ window.onload = function(){
   });
 }
 
+// formatter/format components for rendering pretty DATETIME
+// via <format :value="game.LastTurn" fn="date" /> in game.tmpl file
+// moment is a JS library for pretty DATETIMEs: https://momentjs.com/
 var formatter = {
     date: function (value, format) {
         if (value) {
@@ -80,7 +82,6 @@ var formatter = {
         }
     }
 };
-
 Vue.component('format', {
     template: `<span>{{ formatter[fn](value, format) }}</span>`,
     props: ['value', 'fn', 'format'],

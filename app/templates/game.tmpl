@@ -1,8 +1,8 @@
 <script async src="https://momentjs.com/downloads/moment.js"></script>
 
 <!-- TODO
+- select + move ship on grid
 - render User ship(s) on grid
--- select + move ship on grid
 -->
 
 {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
@@ -141,13 +141,39 @@ scene.focusOn(board.group);
 
 var vec = new THREE.Vector3();
 
-update();
-
 function update() {
   mouse.update();
   scene.render();
   requestAnimationFrame(update);
 }
+
+// keep track of states
+var movingPiece = null;
+function moveEntityToCell(tile) {
+	board.setEntityOnTile(movingPiece, tile);
+	return null;
+}
+
+selector.onSelect.add(function(obj) {
+  if (obj.objectType === vg.TILE) {
+    // select the sprite if one was already there
+    var sprite = obj.entity;
+    if (sprite) {  // then select the object
+      selector.select(sprite, false); // don't fire the signal when firing manually or you'll cause a stack overflow with recursion
+      movingPiece = sprite; // new move
+    } else {
+      if (movingPiece) {
+        movingPiece = moveEntityToCell(obj);
+        // TODO: tell the SERVER you moved the damn piece via WS!
+        return;
+      }
+    }
+  } else {
+    movingPiece = obj;
+  }
+}, this);
+
+update();
 
 function renderShips(ships) {
   //alert(ships);
@@ -155,47 +181,30 @@ function renderShips(ships) {
   var i, sprites = [];
   var spriteConfig = {
     container: board.group,
-    url: '../examples/img/water.png',
+    url: '../examples/img/water.png', // TODO: use ship type/class for image name
     scale: 10,
     heightOffset: 6
   };
 
-  for (i = 0; i < 5; i++) {
+  // TODO: we need to remove all the existing Sprites before updating?
+  for (i=0; i < ships.length; i++) {
+    // render ship image
     sprites[i] = new Sprite(spriteConfig);
-    sprites[i].activate(vg.Tools.randomInt(100), vg.Tools.randomInt(grid.extrudeSettings.amount + 15, 40), vg.Tools.randomInt(100));
-  }
+    sprites[i].activate();
 
-  // keep track of states
-  var currentPiece = 0;
-  selector.onSelect.add(function(obj) {
-    if (obj.objectType === vg.TILE) {
-      // select the sprite if one was already there
-      var e = obj.entity;
-      if (e) {
-        selector.select(e, false); // don't fire the signal when firing manually or you'll cause a stack overflow with recursion
-      }
-      else {
-        // cycle through the sprites, placing them on the clicked tile
-        var p = sprites[currentPiece++];
-        if (currentPiece === sprites.length) {
-          currentPiece = 0;
-        }
-        board.setEntityOnTile(p, obj);
-      }
-      obj.toggle();
-    }
-  }, this);
+    // determine position of ship on
+    q = ships[i]['Position']['X'];
+    r = ships[i]['Position']['Y'];
+    s = -q - r;
+    shipGridCoordinates = q + '.' + r + '.' + s;
+    cell = board.grid.cells[shipGridCoordinates];
+    tile = board.getTileAtCell(cell);
+
+    // place ship on proper Tile
+    board.setEntityOnTile(sprites[i], tile);
+  }
 
   update();
 }
-
-// hmmm, might not need this entire 'load' listener
-window.addEventListener('load', function(evt) {
-  /*mouse.signal.add(function(evt, tile) {
-    if (evt === vg.MouseCaster.CLICK) {
-      tile.toggle();
-    }
-  }, this);*/
-});
 </script>
 <script async src="/js/ws.js"></script>

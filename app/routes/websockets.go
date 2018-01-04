@@ -53,6 +53,8 @@ func retrieveGame(ws *websocket.Conn, r *http.Request) {
 		// it's helpful to negotiate client side CLOSE requests
 		// msg types: https://github.com/gorilla/websocket/blob/master/conn.go#L61
 		messageType, msg, err := ws.ReadMessage()
+
+		// TODO: send the moved ship coordinates back here!
 		log.Printf("%d: %s (ERR: %v)", messageType, msg, err)
 
 		if messageType != -1 && messageType != 8 {
@@ -65,6 +67,7 @@ func retrieveGame(ws *websocket.Conn, r *http.Request) {
 			if account != nil {
 				game := account.GetGame()
 				game.LastTurn = time.Now()
+				//game.Ships[0].Position = structures.Point{X: 3, Y: -4}	// just a test ;)
 				game.Map = nil // save ~400KB of useless crap on the client side PER WS request
 				ws.WriteJSON(game)
 			} else {
