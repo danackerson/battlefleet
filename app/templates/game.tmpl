@@ -18,7 +18,7 @@
           </a>
         </legend>
 
-        <div v-if="connectionState == 'OPEN'">
+        <template v-if="connectionState == 'OPEN'">
           <table v-for="(ship, index) in game.Ships">
             <th>${index + 1}. "${ship.Name}":</th>
             <tr>
@@ -54,18 +54,18 @@
               <td align="left"><span>${ship.Class}</span></td>
             </tr>
           </table>
-        </div>
+        </template>
       </fieldset>
     </div>
 
   <div id="dialogBox" style="top: 10px; display:inline-block;">
     <div class="buttonrow">
-      <div v-if="connectionState != 'OPEN'">
+      <template v-if="connectionState != 'OPEN'">
         <button class="gameToggle" onclick="connectServer();this.blur();">Engage!</button>
-      </div>
-      <div v-else>
+      </template>
+      <template v-else>
         <button class="gameToggle" onclick="disconnectServer();this.blur();">Disengage!</button>
-      </div>
+      </template>
     </div>
   </div>
 
@@ -78,7 +78,7 @@
         <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
       {{ end }}
       </legend>
-      <div v-if="connectionState == 'OPEN'">
+      <template v-if="connectionState == 'OPEN'">
         <table>
           <tr>
             <td align="right"><span style="text-decoration:underline">Last turn:</span></td>
@@ -93,7 +93,7 @@
             <td align="left"><span v-text="game.Glory"></span></td>
           </tr>
         </table>
-      </div>
+      </template>
     </fieldset>
   </div>
 
