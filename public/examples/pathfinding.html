@@ -39,16 +39,16 @@
 		// setup the thing
 		var scene = new vg.Scene({
 			element: document.getElementById('view'),
-			cameraType: 'OrthographicCamera',
+			//cameraType: 'OrthographicCamera',
 			cameraPosition: {x:0, y:200, z:0},
-			orthoZoom: 3
-		}, false);
+			//orthoZoom: 3
+		}, true);
 
 		var grid = new vg.HexGrid({
 			cellSize: 10
 		});
 		grid.generate({
-			size: 10
+			size: 5
 		});
 
 		var mouse = new vg.MouseCaster(scene.container, scene.camera);

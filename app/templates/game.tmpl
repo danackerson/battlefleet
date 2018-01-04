@@ -1,4 +1,3 @@
-<script async src="/js/ws.js"></script>
 <script async src="https://momentjs.com/downloads/moment.js"></script>
 
 <!-- TODO
@@ -19,41 +18,41 @@
         </legend>
 
         <template v-if="connectionState == 'OPEN'">
-          <table v-for="(ship, index) in game.Ships">
-            <th>${index + 1}. "${ship.Name}":</th>
-            <tr>
-              <td align="right">Pos:</td>
-              <td align="left"><span>[${ship.Position.X}, ${ship.Position.Y}]</span></td>
-            </tr>
-            <tr>
-              <td align="right">Crystals:</td>
-              <td align="left"><span>${ship.Crystals}</span></td>
-            </tr>
-            <tr>
-              <td align="right">Guns:</td>
-              <td align="left"><span>${ship.GunPower}</span></td>
-            </tr>
-            <tr>
-              <td align="right">Hull dmg:</td>
-              <td align="left"><span>${ship.HullDamage}</span></td>
-            </tr>
-            <tr>
-              <td align="right">Gun dmg:</td>
-              <td align="left"><span>${ship.GunDamage}</span></td>
-            </tr>
-            <tr>
-              <td align="right">Docked:</td>
-              <td align="left"><span>${ship.Docked}</span></td>
-            </tr>
-            <tr>
-              <td align="right">Type:</td>
-              <td align="left"><span>${ship.Type}</span></td>
-            </tr>
-            <tr>
-              <td align="right">Class:</td>
-              <td align="left"><span>${ship.Class}</span></td>
-            </tr>
-          </table>
+        <table v-for="(ship, index) in game.Ships">
+          <th>${index + 1}. "${ship.Name}":</th>
+          <tr>
+            <td align="right">Pos:</td>
+            <td align="left"><span>[${ship.Position.X}, ${ship.Position.Y}]</span></td>
+          </tr>
+          <tr>
+            <td align="right">Crystals:</td>
+            <td align="left"><span>${ship.Crystals}</span></td>
+          </tr>
+          <tr>
+            <td align="right">Guns:</td>
+            <td align="left"><span>${ship.GunPower}</span></td>
+          </tr>
+          <tr>
+            <td align="right">Hull dmg:</td>
+            <td align="left"><span>${ship.HullDamage}</span></td>
+          </tr>
+          <tr>
+            <td align="right">Gun dmg:</td>
+            <td align="left"><span>${ship.GunDamage}</span></td>
+          </tr>
+          <tr>
+            <td align="right">Docked:</td>
+            <td align="left"><span>${ship.Docked}</span></td>
+          </tr>
+          <tr>
+            <td align="right">Type:</td>
+            <td align="left"><span>${ship.Type}</span></td>
+          </tr>
+          <tr>
+            <td align="right">Class:</td>
+            <td align="left"><span>${ship.Class}</span></td>
+          </tr>
+        </table>
         </template>
       </fieldset>
     </div>
@@ -61,10 +60,10 @@
   <div id="dialogBox" style="top: 10px; display:inline-block;">
     <div class="buttonrow">
       <template v-if="connectionState != 'OPEN'">
-        <button class="gameToggle" onclick="connectServer();this.blur();">Engage!</button>
+      <button class="gameToggle" onclick="connectServer();this.blur();">Engage!</button>
       </template>
       <template v-else>
-        <button class="gameToggle" onclick="disconnectServer();this.blur();">Disengage!</button>
+      <button class="gameToggle" onclick="disconnectServer();this.blur();">Disengage!</button>
       </template>
     </div>
   </div>
@@ -79,20 +78,20 @@
       {{ end }}
       </legend>
       <template v-if="connectionState == 'OPEN'">
-        <table>
-          <tr>
-            <td align="right"><span style="text-decoration:underline">Last turn:</span></td>
-            <td align="left"><format :value="game.LastTurn" fn="date" /></span></td>
-          </tr>
-          <tr>
-            <td align="right"><span style="text-decoration:underline">Credits:</span></td>
-            <td align="left"><span v-text="game.Credits"></span></td>
-          </tr>
-          <tr>
-            <td align="right"><span style="text-decoration:underline">Glory:</span></td>
-            <td align="left"><span v-text="game.Glory"></span></td>
-          </tr>
-        </table>
+      <table>
+        <tr>
+          <td align="right"><span style="text-decoration:underline">Server time:</span></td>
+          <td align="left"><format :value="game.LastTurn" fn="date" /></span></td>
+        </tr>
+        <tr>
+          <td align="right"><span style="text-decoration:underline">Credits:</span></td>
+          <td align="left"><span v-text="game.Credits"></span></td>
+        </tr>
+        <tr>
+          <td align="right"><span style="text-decoration:underline">Glory:</span></td>
+          <td align="left"><span v-text="game.Glory"></span></td>
+        </tr>
+      </table>
       </template>
     </fieldset>
   </div>
@@ -105,54 +104,98 @@
 <script type="text/javascript" src="/js/three.min.js"></script>
 <script type="text/javascript" src="/js/OrbitControls.js"></script>
 <script type="text/javascript" src="/js/hex-grid.min.js"></script>
+<script type="text/javascript" src="/js/Sprite.js"></script>
 <script type="text/javascript">
-window.addEventListener('load', function(evt) {
-  // https://github.com/vonWolfehaus/von-grid/blob/master/src/utils/Scene.js
-  var baseX = 24 * {{ .GridSize }};
-  var baseY = 32 * {{ .GridSize }};
-  var baseZ = 90;
-  var scene = new vg.Scene({
-    element: document.getElementById('grid'),
-    cameraPosition: {x:baseX, y:baseY, z:baseZ},
-    //cameraType: 'OrthographicCamera',
-  }, true); // true|false for OrbitControls.js
+// https://github.com/vonWolfehaus/von-grid/blob/master/src/utils/Scene.js
+var baseX = 24 * {{ .GridSize }};
+var baseY = 32 * {{ .GridSize }};
+var baseZ = 90;
+var scene = new vg.Scene({
+  element: document.getElementById('grid'),
+  cameraPosition: {x:baseX, y:baseY, z:baseZ},
+  //cameraType: 'OrthographicCamera',
+}, true); // true|false for OrbitControls.js
 
-  // this constructs the cells in grid coordinate space
-  // https://github.com/vonWolfehaus/von-grid/blob/master/src/grids/HexGrid.js#L2
-  var grid = new vg.HexGrid({
-    cellSize: 8 // size of individual cells/tiles
-    // https://github.com/vonWolfehaus/von-grid/blob/master/src/grids/Cell.js
-  });
+// this constructs the cells in grid coordinate space
+// https://github.com/vonWolfehaus/von-grid/blob/master/src/grids/HexGrid.js#L2
+var grid = new vg.HexGrid({
+  cellSize: 8 // size of individual cells/tiles
+  // https://github.com/vonWolfehaus/von-grid/blob/master/src/grids/Cell.js
+});
 
-  grid.generate({
-    size: {{ .GridSize }} // size of the board +1
-  });
+grid.generate({
+  size: {{ .GridSize }} // size of the board +1
+});
 
-  var mouse = new vg.MouseCaster(scene.container, scene.camera);
-  var board = new vg.Board(grid);
+var mouse = new vg.MouseCaster(scene.container, scene.camera);
+var selector = new vg.SelectionManager(mouse);
+var board = new vg.Board(grid);
 
-  // this will generate extruded hexagonal tiles
-  board.generateTilemap({
-    tileScale: 0.96 // you might have to scale the tile so the extruded geometry fits the cell size perfectly
-  });
+// this will generate extruded hexagonal tiles
+board.generateTilemap({
+  tileScale: 0.96 // you might have to scale the tile so the extruded geometry fits the cell size perfectly
+});
 
-  scene.add(board.group);
-  scene.focusOn(board.group);
+scene.add(board.group);
+scene.focusOn(board.group);
 
-  var vec = new THREE.Vector3();
+var vec = new THREE.Vector3();
 
-  mouse.signal.add(function(evt, tile) {
-    if (evt === vg.MouseCaster.CLICK) {
-      tile.toggle();
+update();
+
+function update() {
+  mouse.update();
+  scene.render();
+  requestAnimationFrame(update);
+}
+
+function renderShips(ships) {
+  //alert(ships);
+  // populate the board
+  var i, sprites = [];
+  var spriteConfig = {
+    container: board.group,
+    url: '../examples/img/water.png',
+    scale: 10,
+    heightOffset: 6
+  };
+
+  for (i = 0; i < 5; i++) {
+    sprites[i] = new Sprite(spriteConfig);
+    sprites[i].activate(vg.Tools.randomInt(100), vg.Tools.randomInt(grid.extrudeSettings.amount + 15, 40), vg.Tools.randomInt(100));
+  }
+
+  // keep track of states
+  var currentPiece = 0;
+  selector.onSelect.add(function(obj) {
+    if (obj.objectType === vg.TILE) {
+      // select the sprite if one was already there
+      var e = obj.entity;
+      if (e) {
+        selector.select(e, false); // don't fire the signal when firing manually or you'll cause a stack overflow with recursion
+      }
+      else {
+        // cycle through the sprites, placing them on the clicked tile
+        var p = sprites[currentPiece++];
+        if (currentPiece === sprites.length) {
+          currentPiece = 0;
+        }
+        board.setEntityOnTile(p, obj);
+      }
+      obj.toggle();
     }
   }, this);
 
   update();
+}
 
-  function update() {
-    mouse.update();
-    scene.render();
-    requestAnimationFrame(update);
-  }
+// hmmm, might not need this entire 'load' listener
+window.addEventListener('load', function(evt) {
+  /*mouse.signal.add(function(evt, tile) {
+    if (evt === vg.MouseCaster.CLICK) {
+      tile.toggle();
+    }
+  }, this);*/
 });
 </script>
+<script async src="/js/ws.js"></script>

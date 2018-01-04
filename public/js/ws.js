@@ -57,6 +57,8 @@ function connectServer() {
 
 function bootstrapGameData(game) {
   //alert(game["LastTurn"]);
+  // TODO: render game["Ships"]
+  renderShips(game["Ships"]);
 }
 
 window.onload = function(){

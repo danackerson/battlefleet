@@ -65,6 +65,7 @@ func retrieveGame(ws *websocket.Conn, r *http.Request) {
 			if account != nil {
 				game := account.GetGame()
 				game.LastTurn = time.Now()
+				game.Map = nil // save ~400KB of useless crap on the client side PER WS request
 				ws.WriteJSON(game)
 			} else {
 				ws.WriteMessage(websocket.TextMessage, []byte(time.Now().Format(time.UnixDate)))

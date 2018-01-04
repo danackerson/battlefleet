@@ -1,7 +1,7 @@
 <script>
-var AUTH0_CLIENT_ID = '{{ .Data.Auth0ClientID }}';
-var AUTH0_DOMAIN = '{{ .Data.Auth0Domain }}';
-var AUTH0_CALLBACK_URL = '{{ .Data.Auth0CallbackURL }}';
+var AUTH0_CLIENT_ID = '{{ .AuthData.Auth0ClientID }}';
+var AUTH0_DOMAIN = '{{ .AuthData.Auth0Domain }}';
+var AUTH0_CALLBACK_URL = '{{ .AuthData.Auth0CallbackURL }}';
 </script>
 <div id="dialogBox" style="top: 0px; display: block;">
   <div class="dialogTop"></div>

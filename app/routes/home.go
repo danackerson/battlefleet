@@ -26,5 +26,5 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderer.HTML(w, http.StatusOK, "home",
-		map[string]interface{}{"Account": account, "Data": app.AuthZeroData, "DevEnv": !app.ProdSession})
+		map[string]interface{}{"Account": account, "AuthData": app.AuthZeroData, "DevEnv": !app.ProdSession})
 }

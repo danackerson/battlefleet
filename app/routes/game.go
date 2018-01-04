@@ -48,8 +48,14 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		if !redirected {
 			renderer.HTML(w, http.StatusOK, "game",
 				map[string]interface{}{
-					"Account": account, "Data": app.AuthZeroData,
-					"DevEnv": !app.ProdSession, "GridSize": structures.GridSize,
+					"Account": map[string]interface{}{
+						"ID":           account.ID,
+						"Commander":    account.Commander,
+						"Auth0Profile": account.Auth0Profile,
+						"Auth0Token":   account.Auth0Token},
+					"AuthData": app.AuthZeroData,
+					"DevEnv":   !app.ProdSession,
+					"GridSize": structures.GridSize,
 				})
 		}
 	} else {
