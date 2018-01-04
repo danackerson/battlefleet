@@ -15,7 +15,7 @@ var AUTH0_CALLBACK_URL = '{{ .Data.Auth0CallbackURL }}';
         {{ if not .Account.Auth0Token }}
           <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Save</a>
         {{ else }}
-          <img class="userProfilePic" src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}"/>
+          <img class="userProfilePic" style="transform: translateY(6%);" src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}"/>
           <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
         </span>
         <span style="display:block;clear:left;">

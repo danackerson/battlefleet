@@ -15,7 +15,7 @@ import (
 // AccountHandler for handling account requests
 func AccountHandler(w http.ResponseWriter, r *http.Request) {
 	var account *structures.Account
-	session, _ := app.SessionStore.Get(r, app.SessionCookieKey)
+	session := RetrieveSession(w, r)
 	if session.Values[app.AccountKey] != nil {
 		account = session.Values[app.AccountKey].(*structures.Account)
 

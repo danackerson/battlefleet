@@ -9,7 +9,7 @@ import (
 
 // HomeHandler for handling index page requests
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	session, _ := app.SessionStore.Get(r, app.SessionCookieKey)
+	session := RetrieveSession(w, r)
 
 	if session.Values[app.CmdrNameKey] == nil {
 		session.Values[app.CmdrNameKey] = app.DefaultCmdrName

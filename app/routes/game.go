@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/danackerson/battlefleet/app"
@@ -22,19 +21,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(parseErr)
 	}
 
-	session, sessionErr := app.SessionStore.Get(r, app.SessionCookieKey)
-	if sessionErr != nil {
-		if strings.Contains(sessionErr.Error(), "no such file or directory") {
-			// don't panic
-			log.Printf("Creating new session: %s", session.ID)
-		} else {
-			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, "getSession: "+sessionErr.Error())
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
-			return
-		}
-	}
-
+	session := RetrieveSession(w, r)
 	account := getAccount(r, session)
 	if account != nil {
 		gameUUID := requestParams["gameid"]

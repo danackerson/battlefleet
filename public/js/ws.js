@@ -67,6 +67,24 @@ window.onload = function(){
       ws: null,
       connectionState: 'INITIAL',
       game: 'Loading...',
-    },
+    }
   });
 }
+
+var formatter = {
+    date: function (value, format) {
+        if (value) {
+            return moment(String(value)).format(format || 'DD.MM.YY hh:mm:ss')
+        }
+    }
+};
+
+Vue.component('format', {
+    template: `<span>{{ formatter[fn](value, format) }}</span>`,
+    props: ['value', 'fn', 'format'],
+    computed: {
+        formatter() {
+            return formatter;
+        }
+    }
+});

@@ -31,21 +31,31 @@ a:hover, a:active {
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
 }
 
-#dialogOverlay {
-	position: fixed;
-	z-index: 10;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-	background: #000;
-	opacity: 0.7;
+.gameFieldSet {
+  border-color:skyblue;
+  border-width:4px;
+  border-radius:8px;"
+}
+.gameInfo {
+  width:20%;
+  font-family: "Play script=all rev=1";
+  padding: 0;
+  text-align:center;
+  overflow: hidden;
+  background-color:background-color:rgba(0, 0, 0, 0.5);
+}
+#leftGameInfo {
+  float:left;
+}
+
+#rightGameInfo {
+  float:right;
 }
 
 #dialogBox {
-	position: absolute;
 	z-index: 50;
-	width: 850px;
+  position: absolute;
+  width: 850px;
 	left: 50%;
 	margin-left: -425px;
 	top: 80px;
@@ -175,12 +185,12 @@ a:hover, a:active {
 #dialogBox .formbox .buttonrow input[type=button] {
 	background: url(/images/dialog_button_register.png) center top no-repeat;
 	height: 50px;
-  width: 318px;
+  width: 323px;
 }
 #dialogBox .buttonrow .gameToggle {
   background: url(/images/button-register.png) center top no-repeat;
 	height: 70px;
-  width: 318px;
+  width: 323px;
 }
 #dialogBox .buttonrow .gameToggle,
 #dialogBox .formbox .buttonrow input[type=button] {
@@ -199,7 +209,7 @@ a:hover, a:active {
 }
 
 #dialogBox .buttonrow .gameToggle:hover {
-  background-position: 0 -70px;
+  background-position: 1 -70px;
   color: #abffb1;
 }
 #dialogBox .formbox .buttonrow input[type=button]:hover {
@@ -209,9 +219,8 @@ a:hover, a:active {
 
 .userProfilePic {
   padding-left:5px;
-  padding-right:95px;
-  height:15px;
-  width:15px;
+  height:16px;
+  width:16px;
 }
 
 a.saveButton {
@@ -220,7 +229,7 @@ a.saveButton {
 	width: 130px;
 	height: 24px;
 	line-height: 23px;
-  margin-left: 50px;
+  margin:5px;
 	font-size: 11px;
 	text-align: center;
 	color: #8ad2ff;

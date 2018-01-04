@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/danackerson/battlefleet/app"
@@ -66,28 +65,6 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := app.SessionStore.Get(r, app.SessionCookieKey)
-	if err != nil {
-		origError := err.Error()
-		if strings.Contains(err.Error(), "no such file or directory") {
-			// probably have an old session cookie so recreate
-			session, err = app.SessionStore.New(r, app.SessionCookieKey)
-			if err != nil {
-				if !strings.Contains(err.Error(), "no such file or directory") {
-					t, _ := template.New("errorPage").Parse(errorPage)
-					t.Execute(w, "recreateSession: "+err.Error()+" (after '"+origError+"')")
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
-					return
-				}
-			}
-		} else {
-			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, "getSession: "+err.Error())
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
-			return
-		}
-	}
-
 	var accountFound *structures.Account
 	mongoSession := app.DB.Copy()
 	defer mongoSession.Close()
@@ -104,6 +81,8 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var accountPlaying *structures.Account
+
+	session := RetrieveSession(w, r)
 	if session.Values[app.AccountKey] != nil {
 		accountPlaying = session.Values[app.AccountKey].(*structures.Account)
 		if accountPlaying.Commander != app.DefaultCmdrName {

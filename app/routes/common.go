@@ -2,15 +2,18 @@ package routes
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/danackerson/battlefleet/app"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	render "github.com/unrolled/render"
 )
 
@@ -33,6 +36,30 @@ const errorPage = `
 		If this problem persists, please forward this msg to admin@ackerson.de:<br/><br/>
 		{{ . }}<br/><br/>
 `
+
+// RetrieveSession fetches existing session store, or, if unavailable, recreates
+func RetrieveSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
+	session, err := app.SessionStore.Get(r, app.SessionCookieKey)
+	if err != nil {
+		origError := err
+		log.Println(origError)
+		session.Options.MaxAge = -1
+		session.Save(r, w)
+		session, err = app.SessionStore.New(r, app.SessionCookieKey)
+		if err != nil {
+			if !strings.Contains(err.Error(), "no such file or directory") {
+				t, _ := template.New("errorPage").Parse(errorPage)
+				t.Execute(w, "recreateSession: "+err.Error()+" (after '"+origError.Error()+"')")
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+			}
+		}
+		session.Save(r, w)
+
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	}
+
+	return session
+}
 
 // SetUpMuxHandlers sets up the router
 func SetUpMuxHandlers(isUnitTest bool) *mux.Router {

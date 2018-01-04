@@ -1,31 +1,64 @@
 <script async src="/js/ws.js"></script>
+<script async src="https://momentjs.com/downloads/moment.js"></script>
 
 <!-- TODO
-- begin rendering info boxes left|right of "grid"
--- Ship info
--- Power crystals, etc.
 - render User ship(s) on grid
 -- select + move ship on grid
 -->
-<div id="app">
-  <div style="float:left; width:15%; background-color:gray;">
-    <span>left</span>
-  </div>
 
-  <div id="dialogBox" style="top: 10px; display:block;">
-    <div class="title" style="margin-bottom: 0px;">
-      {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
-      {{ $user_profile_nick := index .Account.Auth0Profile "nickname" }}
-      <span style="padding-top:5px;">Welcome, <a href="/account/" tabindex="1">{{ .Account.Commander }}</a>
-      {{ if not .Account.Auth0Token }}
-        <a href="javascript:loginAuth0();" class="saveButton" tabindex="2">Save</a>
-      {{ else }}
-        <img class="userProfilePic" src="{{ $user_profile_pic }}" alt="{{ $user_profile_nick }}"/>
-        <a href="javascript:logoutAuth0();" class="saveButton" tabindex="2">Quit</a>
-      {{ end }}
-      </span>
+{{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
+
+<div id="app" style="z-index:50;">
+    <div id="leftGameInfo" class="gameInfo">
+      <fieldset class="gameFieldSet">
+        <legend style="color:orange;font-weight:bold;">
+          <a href="/account/" tabindex="1" style="padding-right:5px;">
+            <img class="userProfilePic" style="transform: translateY(15%);" src="{{ $user_profile_pic }}"/>
+            &nbsp;&nbsp;{{ .Account.Commander }}'s Ships
+          </a>
+        </legend>
+
+        <div v-if="connectionState == 'OPEN'">
+          <table v-for="(ship, index) in game.Ships">
+            <th>${index + 1}. "${ship.Name}":</th>
+            <tr>
+              <td align="right">Pos:</td>
+              <td align="left"><span>[${ship.Position.X}, ${ship.Position.Y}]</span></td>
+            </tr>
+            <tr>
+              <td align="right">Crystals:</td>
+              <td align="left"><span>${ship.Crystals}</span></td>
+            </tr>
+            <tr>
+              <td align="right">Guns:</td>
+              <td align="left"><span>${ship.GunPower}</span></td>
+            </tr>
+            <tr>
+              <td align="right">Hull dmg:</td>
+              <td align="left"><span>${ship.HullDamage}</span></td>
+            </tr>
+            <tr>
+              <td align="right">Gun dmg:</td>
+              <td align="left"><span>${ship.GunDamage}</span></td>
+            </tr>
+            <tr>
+              <td align="right">Docked:</td>
+              <td align="left"><span>${ship.Docked}</span></td>
+            </tr>
+            <tr>
+              <td align="right">Type:</td>
+              <td align="left"><span>${ship.Type}</span></td>
+            </tr>
+            <tr>
+              <td align="right">Class:</td>
+              <td align="left"><span>${ship.Class}</span></td>
+            </tr>
+          </table>
+        </div>
+      </fieldset>
     </div>
 
+  <div id="dialogBox" style="top: 10px; display:inline-block;">
     <div class="buttonrow">
       <div v-if="connectionState != 'OPEN'">
         <button class="gameToggle" onclick="connectServer();this.blur();">Engage!</button>
@@ -36,18 +69,38 @@
     </div>
   </div>
 
-  <div style="float:right; width:15%; background-color:gray; background-color:gray;">
-    <span>Server Time: <p v-if="game.LastTurn" v-text="game.LastTurn"></p></span>
-    <span v-if="connectionState == 'OPEN'">
-      <li v-for="(item, index) in game">
-        ${index}: ${item}
-      </li>
-    </span>
+  <div id="rightGameInfo" class="gameInfo">
+    <fieldset class="gameFieldSet">
+      <legend>
+      {{ if not .Account.Auth0Token }}
+        <a href="javascript:loginAuth0();" class="saveButton" tabindex="1">Save</a>
+      {{ else }}
+        <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
+      {{ end }}
+      </legend>
+      <div v-if="connectionState == 'OPEN'">
+        <table>
+          <tr>
+            <td align="right"><span style="text-decoration:underline">Last turn:</span></td>
+            <td align="left"><format :value="game.LastTurn" fn="date" /></span></td>
+          </tr>
+          <tr>
+            <td align="right"><span style="text-decoration:underline">Credits:</span></td>
+            <td align="left"><span v-text="game.Credits"></span></td>
+          </tr>
+          <tr>
+            <td align="right"><span style="text-decoration:underline">Glory:</span></td>
+            <td align="left"><span v-text="game.Glory"></span></td>
+          </tr>
+        </table>
+      </div>
+    </fieldset>
   </div>
+
   <br style="clear: left;" />
 </div>
 
-<div id="grid"></div>
+<div id="grid" style="z-index:-1;"></div>
 
 <script type="text/javascript" src="/js/three.min.js"></script>
 <script type="text/javascript" src="/js/OrbitControls.js"></script>
@@ -91,12 +144,6 @@ window.addEventListener('load', function(evt) {
   mouse.signal.add(function(evt, tile) {
     if (evt === vg.MouseCaster.CLICK) {
       tile.toggle();
-      //alert("Q:" + tile.cell.q + ", R:" + tile.cell.r);
-      /*or we can use the mouse's raw coordinates to access the cell directly, just for fun:
-      var cell = board.grid.pixelToCell(mouse.position);
-      var t = board.getTileAtCell(cell);
-      if (t) t.toggle();
-      //alert("Q:" + t.cell.q + ", R:" + t.cell.r);*/
     }
   }, this);
 
