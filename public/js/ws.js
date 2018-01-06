@@ -19,21 +19,23 @@ function connectServer() {
     wsApp.$data.ws = new WebSocket(scheme + '//' + window.location.host + '/wsInit');
     if (wsApp.$data.ws.readyState != WebSocket.CLOSED) {
       wsApp.$data.ws.addEventListener('message', function(e) {
+        if (e.data != null) {
           wsApp.game = JSON.parse(e.data); // MUST set wsApp.game for vue actions in game.tmpl
           bootstrapGameData(wsApp.game);
-          wsApp.$data.ws.send("ACK");
+          wsApp.$data.ws.send("ACK:");
+        }
       });
 
       wsApp.$data.ws.onopen = function (evt) {
         wsApp.$data.connectionState = 'OPEN';
-        wsApp.$data.ws.send("OPEN");
+        wsApp.$data.ws.send("OPEN:");
         console.log('Socket open: Waiting for data');
         userDisconnect = false;
       }
 
       wsApp.$data.ws.onerror = function(evt) {
         wsApp.$data.connectionState = 'ERROR';
-        wsApp.$data.ws.send("ERR");
+        wsApp.$data.ws.send("ERR:");
         console.error('Socket encountered error: ', evt.message, 'Closing socket');
         wsApp.$data.ws.close();
       }
@@ -55,9 +57,17 @@ function connectServer() {
   }
 }
 
+var sceneHash;
 function bootstrapGameData(game) {
-  // TODO: if nothing has changed, don't renderShips! (hash last state and check?)
-  renderShips(game["Ships"]);
+  // if nothing has changed, DON'T re-renderShips !
+  stringedScene = JSON.stringify(game["Ships"]);
+  sceneHashNew = md5(stringedScene);
+  /*console.log("old hash: " + sceneHash);
+  console.log("new hash: " + sceneHashNew);*/
+  if (sceneHash === undefined || sceneHash != sceneHashNew) {
+    sceneHash = sceneHashNew;
+    renderShips(game["Ships"]);
+  }
 }
 
 window.onload = function(){

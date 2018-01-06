@@ -1,10 +1,3 @@
-<script async src="https://momentjs.com/downloads/moment.js"></script>
-
-<!-- TODO
-- select + move ship on grid
-- render User ship(s) on grid
--->
-
 {{ $user_profile_pic := index .Account.Auth0Profile "picture" }}
 
 <div id="app" style="z-index:50;">
@@ -150,8 +143,18 @@ function update() {
 // keep track of states
 var movingPiece = null;
 function moveEntityToCell(tile) {
-	board.setEntityOnTile(movingPiece, tile);
-	return null;
+  origin = "(" + movingPiece.tile.cell.q + "," + movingPiece.tile.cell.r + ")";
+  destination = "(" + tile.cell.q + "," + tile.cell.r + ")";
+
+  // websockets.go handles this MSG format => `re := regexp.MustCompile(`(?P<ShipID>...`
+  wsApp.$data.ws.send("MOV:" + movingPiece.uniqueId + origin + ">>" + destination);
+  board.setEntityOnTile(movingPiece, tile);
+
+  //TODO: ensure the removal of the originally moved ship (entity/sprite)!
+  // seems to be a race condition where the Server needs 1 second to repaint the object
+  // but in the meantime, the object has already been moved :(
+  // Other option is to remove the 1 sec heavy POLL/ACK and replace with PING/PONG?
+  return null;
 }
 
 selector.onSelect.add(function(obj) {
@@ -161,12 +164,9 @@ selector.onSelect.add(function(obj) {
     if (sprite) {  // then select the object
       selector.select(sprite, false); // don't fire the signal when firing manually or you'll cause a stack overflow with recursion
       movingPiece = sprite; // new move
-    } else {
-      if (movingPiece) {
+    } else if (movingPiece) {
         movingPiece = moveEntityToCell(obj);
-        // TODO: tell the SERVER you moved the damn piece via WS!
         return;
-      }
     }
   } else {
     movingPiece = obj;
@@ -176,22 +176,21 @@ selector.onSelect.add(function(obj) {
 update();
 
 function renderShips(ships) {
-  //alert(ships);
   // populate the board
   var i, sprites = [];
-  var spriteConfig = {
-    container: board.group,
-    url: '../examples/img/water.png', // TODO: use ship type/class for image name
-    scale: 10,
-    heightOffset: 6
-  };
 
-  // TODO: we need to remove all the existing Sprites before updating?
   for (i=0; i < ships.length; i++) {
+    var spriteConfig = {
+      container: board.group,
+      url: '/images/ships/'+ships[i]['Class']+'_'+ships[i]['Type']+'.png',
+      scale: 10,
+      heightOffset: 6
+    };
+
     // render ship image
     sprites[i] = new Sprite(spriteConfig);
     sprites[i].activate();
-
+    sprites[i].uniqueId = ships[i]['ID'];
     // determine position of ship on
     q = ships[i]['Position']['X'];
     r = ships[i]['Position']['Y'];
@@ -203,8 +202,8 @@ function renderShips(ships) {
     // place ship on proper Tile
     board.setEntityOnTile(sprites[i], tile);
   }
-
-  update();
 }
 </script>
+<script async src="https://momentjs.com/downloads/moment.js"></script>
 <script async src="/js/ws.js"></script>
+<script src="http://www.myersdaily.org/joseph/javascript/md5.js"></script>

@@ -283,21 +283,6 @@ func TestHome1Game1Home2(t *testing.T) {
 func TestWebSocketConnect(t *testing.T) {
 	t.Parallel()
 
-	/*sessionCookie := ""
-
-	// 0. visit "/games/__new__" and get a new gameUUIDKey
-	res, req := prepareServeHTTP("GET", host+"/games/"+newGameUUID, sessionCookie, nil)
-	router.ServeHTTP(res, req)
-	session, _ := store.Get(req, sessionCookieKey)
-	newGameURL := res.Header().Get("Location")
-
-	// 1. visit new game page and verify new gameUUID
-	reader := strings.NewReader("cmdrName=WSUser")
-	res, req = prepareServeHTTP("POST", host+newGameURL, sessionCookie, session, reader)
-	router.ServeHTTP(res, req)
-	//session, _ = store.Get(req, sessionCookieKey)
-	//gameUUID := session.Values[gameUUIDKey].(string)*/
-
 	// 2. open websocket and get server time
 	srv := httptest.NewServer(http.HandlerFunc(routes.ServeWebSocket))
 	u, _ := url.Parse(srv.URL)
@@ -308,7 +293,7 @@ func TestWebSocketConnect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot make websocket connection: %v => %v", err, resp)
 	}
-	err = conn.WriteMessage(websocket.TextMessage, []byte("OPEN"))
+	err = conn.WriteMessage(websocket.TextMessage, []byte("OPEN:"))
 	if err != nil {
 		t.Fatalf("cannot write message: %v", err)
 	}
