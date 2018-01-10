@@ -6,11 +6,10 @@
         <legend style="color:orange;font-weight:bold;">
           <a href="/account/" tabindex="1" style="padding-right:5px;">
             <img class="userProfilePic" style="transform: translateY(15%);" src="{{ $user_profile_pic }}"/>
-            &nbsp;&nbsp;{{ .Account.Commander }}'s Ships
-          </a>
+            &nbsp;&nbsp;{{ .Account.Commander }}'s</a> Ships <template v-if="game.Ships">(${game.Ships.length})</template>
         </legend>
 
-        <template v-if="connectionState == 'OPEN'">
+        <template v-if="game.Ships">
         <table v-for="(ship, index) in game.Ships">
           <th>${index + 1}. "${ship.Name}":</th>
           <tr>
@@ -70,10 +69,11 @@
         <a href="javascript:logoutAuth0();" class="saveButton" tabindex="1">Quit</a>
       {{ end }}
       </legend>
-      <template v-if="connectionState == 'OPEN'">
+      <template v-if="game.Ships">
+
       <table>
         <tr>
-          <td align="right"><span style="text-decoration:underline">Server time:</span></td>
+          <td align="right"><span style="text-decoration:underline">Last turn:</span></td>
           <td align="left"><format :value="game.LastTurn" fn="date" /></span></td>
         </tr>
         <tr>
@@ -128,11 +128,10 @@ var board = new vg.Board(grid);
 board.generateTilemap({
   tileScale: 0.96 // you might have to scale the tile so the extruded geometry fits the cell size perfectly
 });
-
 scene.add(board.group);
 scene.focusOn(board.group);
 
-var vec = new THREE.Vector3();
+//var vec = new THREE.Vector3();
 
 function update() {
   mouse.update();
@@ -140,70 +139,27 @@ function update() {
   requestAnimationFrame(update);
 }
 
-// keep track of states
-var movingPiece = null;
-function moveEntityToCell(tile) {
-  origin = "(" + movingPiece.tile.cell.q + "," + movingPiece.tile.cell.r + ")";
-  destination = "(" + tile.cell.q + "," + tile.cell.r + ")";
-
-  // websockets.go handles this MSG format => `re := regexp.MustCompile(`(?P<ShipID>...`
-  wsApp.$data.ws.send("MOV:" + movingPiece.uniqueId + origin + ">>" + destination);
-  board.setEntityOnTile(movingPiece, tile);
-
-  //TODO: ensure the removal of the originally moved ship (entity/sprite)!
-  // seems to be a race condition where the Server needs 1 second to repaint the object
-  // but in the meantime, the object has already been moved :(
-  // Other option is to remove the 1 sec heavy POLL/ACK and replace with PING/PONG?
-  return null;
-}
-
 selector.onSelect.add(function(obj) {
-  if (obj.objectType === vg.TILE) {
-    // select the sprite if one was already there
-    var sprite = obj.entity;
-    if (sprite) {  // then select the object
-      selector.select(sprite, false); // don't fire the signal when firing manually or you'll cause a stack overflow with recursion
-      movingPiece = sprite; // new move
-    } else if (movingPiece) {
-        movingPiece = moveEntityToCell(obj);
-        return;
+  // if websocket connection is closed, no selection is possible
+  if (wsApp.$data.connectionState == 'OPEN') {
+    if (obj.objectType === vg.TILE) {
+      // select the sprite if one was already there
+      var sprite = obj.entity;
+      if (sprite) {  // then select the object
+        selector.select(sprite, false); // don't fire the signal when firing manually or you'll cause a stack overflow with recursion
+        movingPiece = sprite; // new move
+      } else if (movingPiece) {
+          moveEntityToCell(movingPiece, obj);
+          return;
+      }
+    } else {
+      movingPiece = obj;
     }
-  } else {
-    movingPiece = obj;
   }
 }, this);
 
 update();
-
-function renderShips(ships) {
-  // populate the board
-  var i, sprites = [];
-
-  for (i=0; i < ships.length; i++) {
-    var spriteConfig = {
-      container: board.group,
-      url: '/images/ships/'+ships[i]['Class']+'_'+ships[i]['Type']+'.png',
-      scale: 10,
-      heightOffset: 6
-    };
-
-    // render ship image
-    sprites[i] = new Sprite(spriteConfig);
-    sprites[i].activate();
-    sprites[i].uniqueId = ships[i]['ID'];
-    // determine position of ship on
-    q = ships[i]['Position']['X'];
-    r = ships[i]['Position']['Y'];
-    s = -q - r;
-    shipGridCoordinates = q + '.' + r + '.' + s;
-    cell = board.grid.cells[shipGridCoordinates];
-    tile = board.getTileAtCell(cell);
-
-    // place ship on proper Tile
-    board.setEntityOnTile(sprites[i], tile);
-  }
-}
 </script>
-<script async src="https://momentjs.com/downloads/moment.js"></script>
+<script async src="/js/moment.min.js"></script>
 <script async src="/js/ws.js"></script>
-<script src="/js/md5.js"></script>
+<!--script src="/js/md5.js"></script>-->

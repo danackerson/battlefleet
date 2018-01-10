@@ -2,8 +2,6 @@ var wsApp;
 
 var userDisconnect = false;
 
-// see https://github.com/mpalmerlee/HexagonTools
-// https://www.redblobgames.com/grids/hexagons/
 function disconnectServer() {
   userDisconnect = true;
   wsApp.$data.ws.close();
@@ -20,28 +18,28 @@ function connectServer() {
     if (wsApp.$data.ws.readyState != WebSocket.CLOSED) {
       wsApp.$data.ws.addEventListener('message', function(e) {
         if (e.data != null) {
-          wsApp.game = JSON.parse(e.data); // MUST set wsApp.game for vue actions in game.tmpl
-          bootstrapGameData(wsApp.game);
-          wsApp.$data.ws.send("ACK:");
+          wsApp.game = JSON.parse(e.data);
+          renderShips(wsApp.game["Ships"]);
         }
       });
 
       wsApp.$data.ws.onopen = function (evt) {
         wsApp.$data.connectionState = 'OPEN';
-        wsApp.$data.ws.send("OPEN:");
+        sendWebSocketMessage(JSON.stringify({'cmd': 'OPEN'}));
         console.log('Socket open: Waiting for data');
         userDisconnect = false;
       }
 
       wsApp.$data.ws.onerror = function(evt) {
         wsApp.$data.connectionState = 'ERROR';
-        wsApp.$data.ws.send("ERR:");
+        sendWebSocketMessage(JSON.stringify({'cmd': 'ERR'}));
         console.error('Socket encountered error: ', evt.message, 'Closing socket');
         wsApp.$data.ws.close();
       }
 
       wsApp.$data.ws.onclose = function (evt) {
         wsApp.$data.connectionState = 'CLOSED';
+        clearBoard();
         if (!userDisconnect) {
           console.log('Socket is closed.', evt.reason, ' Reconnect will be attempted.');
           setTimeout(function() {
@@ -57,17 +55,73 @@ function connectServer() {
   }
 }
 
-var sceneHash;
-function bootstrapGameData(game) {
-  // if nothing has changed, DON'T re-renderShips !
-  stringedScene = JSON.stringify(game["Ships"]);
-  sceneHashNew = md5(stringedScene);
-  /*console.log("old hash: " + sceneHash);
-  console.log("new hash: " + sceneHashNew);*/
-  if (sceneHash === undefined || sceneHash != sceneHashNew) {
-    sceneHash = sceneHashNew;
-    renderShips(game["Ships"]);
+// Hexagon Helpers
+// https://www.redblobgames.com/grids/hexagons/
+// https://github.com/mpalmerlee/HexagonTools
+
+var sprites = [];
+// cleanup board in prep for next reconnect/rendering
+function clearBoard() {
+  for (i=0; i < sprites.length; i++) {
+    sprites[i].disable();
+    sprites.splice(i,1);
   }
+
+  movingPiece = null;
+  //console.log("board cleared...");
+}
+
+function renderShips(ships) {
+  // populate the board
+  for (i=0; i < ships.length; i++) {
+    var spriteConfig = {
+      container: board.group,
+      url: '/images/ships/'+ships[i]['Class']+'_'+ships[i]['Type']+'.png',
+      scale: 10,
+      heightOffset: 6
+    };
+
+    // render ship image
+    sprites[i] = new Sprite(spriteConfig);
+    sprites[i].activate();
+    sprites[i].uniqueId = ships[i]['ID'];
+    // determine position of ship on
+    q = ships[i]['Position']['X'];
+    r = ships[i]['Position']['Y'];
+    s = -q - r;
+    shipGridCoordinates = q + '.' + r + '.' + s;
+    cell = board.grid.cells[shipGridCoordinates];
+    tile = board.getTileAtCell(cell);
+
+    // place ship on proper Tile
+    board.setEntityOnTile(sprites[i], tile);
+  }
+}
+
+// keep track of states
+var movingPiece = null;
+function moveEntityToCell(movingPiece, tile) {
+  origin = "(" + movingPiece.tile.cell.q + "," + movingPiece.tile.cell.r + ")";
+  destination = "(" + tile.cell.q + "," + tile.cell.r + ")";
+
+  var ship = new Object();
+  ship.ID = movingPiece.uniqueId;
+  ship.origin = {Q: movingPiece.tile.cell.q, R: movingPiece.tile.cell.r};
+  ship.destination = {Q: tile.cell.q, R: tile.cell.r};
+
+  var msg = new Object();
+  msg.cmd = "MOV";
+  msg.payload = ship;
+
+  sendWebSocketMessage(JSON.stringify(msg));
+
+  board.setEntityOnTile(movingPiece, tile);
+
+  clearBoard(); // response from server will redraw the board
+}
+
+function sendWebSocketMessage(jsonString) {
+  wsApp.$data.ws.send(jsonString);
 }
 
 window.onload = function(){
@@ -88,7 +142,7 @@ window.onload = function(){
 var formatter = {
     date: function (value, format) {
         if (value) {
-            return moment(String(value)).format(format || 'DD.MM.YY hh:mm:ss')
+            return moment(String(value)).format(format || 'DD.MM.YY HH:mm:ss')
         }
     }
 };

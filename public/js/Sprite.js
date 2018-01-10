@@ -83,6 +83,7 @@ Sprite.prototype = {
 	},
 
 	select: function() {
+		// TODO: update/highlight ship info on screen?
 		this.material.color.set(this.highlight);
 	},
 
