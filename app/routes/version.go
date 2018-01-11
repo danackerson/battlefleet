@@ -7,10 +7,24 @@ import (
 	"github.com/danackerson/battlefleet/app"
 )
 
+type version struct {
+	URL string
+	Tag string
+}
+
+// GetVersionURL does what it says on the box
+func GetVersionInfo() *version {
+	versionInfo := &version{
+		URL: "https://circleci.com/gh/danackerson/battlefleet/" + app.Version,
+		Tag: app.Version,
+	}
+	return versionInfo
+}
+
 // VersionHandler now commented
 func VersionHandler(w http.ResponseWriter, req *http.Request) {
-	buildURL := "https://circleci.com/gh/danackerson/battlefleet/" + app.Version
-	v := map[string]string{"version": buildURL, "build": app.Version}
+	versionInfo := GetVersionInfo()
+	v := map[string]string{"version": versionInfo.URL, "build": versionInfo.Tag}
 
 	data, _ := json.Marshal(v)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

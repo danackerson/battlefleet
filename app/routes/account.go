@@ -52,7 +52,10 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		renderer.HTML(w, http.StatusOK, "account",
-			map[string]interface{}{"Account": account, "AuthData": app.AuthZeroData, "DevEnv": !app.ProdSession})
+			map[string]interface{}{
+				"Account": account, "AuthData": app.AuthZeroData,
+				"DevEnv": !app.ProdSession, "Version": GetVersionInfo(),
+			})
 	} else {
 		t, _ := template.New("errorPage").Parse(errorPage)
 		t.Execute(w, "You are currently not logged in!")

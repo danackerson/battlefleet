@@ -55,6 +55,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 						"Auth0Token":   account.Auth0Token},
 					"AuthData": app.AuthZeroData,
 					"DevEnv":   !app.ProdSession,
+					"Version":  GetVersionInfo(),
 					"GridSize": structures.GridSize,
 				})
 		}

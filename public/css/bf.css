@@ -244,3 +244,16 @@ a.saveButton {
 a.saveButton:hover {
 	background-position: 0 -24px;
 }
+
+#version {
+  float:right;
+  font-family: 'Play', sans-serif;
+  font-size: 8px;
+  font-weight: bold;
+  position: absolute;
+  bottom:3px;
+  right:3px;
+}
+#version a {
+  color: #00c6ff;
+}
