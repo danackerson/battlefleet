@@ -2,10 +2,25 @@ var wsApp;
 
 var userDisconnect = false;
 
-function disconnectServer() {
+function disconnectServer(reason) {
   userDisconnect = true;
   wsApp.$data.ws.close();
   wsApp.$data.connectionState = 'CLOSING';
+  if (reason == "idle") {
+    console.log('Idle disconnect from client-side (' + idleTimeout + ' secs with no action exceeded)...');
+  }
+}
+
+var idleTimeout = 60000; // 60 secs
+var idleTimeoutHandle = resetIdleTimeout();
+function resetIdleTimeout() {
+  window.clearTimeout(idleTimeoutHandle);
+
+  idleTimeoutHandle = window.setTimeout(function() {
+    disconnectServer("idle");
+  }, idleTimeout);  // wait idle seconds to auto-disconnect on idle game
+
+  return idleTimeoutHandle;
 }
 
 function connectServer() {
@@ -20,6 +35,7 @@ function connectServer() {
         if (e.data != null) {
           wsApp.game = JSON.parse(e.data);
           renderShips(wsApp.game["Ships"]);
+          resetIdleTimeout();
         }
       });
 
@@ -27,7 +43,9 @@ function connectServer() {
         wsApp.$data.connectionState = 'OPEN';
         sendWebSocketMessage(JSON.stringify({'cmd': 'OPEN'}));
         console.log('Socket open: Waiting for data');
+
         userDisconnect = false;
+        resetIdleTimeout();
       }
 
       wsApp.$data.ws.onerror = function(evt) {
@@ -35,11 +53,15 @@ function connectServer() {
         sendWebSocketMessage(JSON.stringify({'cmd': 'ERR'}));
         console.error('Socket encountered error: ', evt.message, 'Closing socket');
         wsApp.$data.ws.close();
+
+        window.clearTimeout(idleTimeoutHandle);
       }
 
       wsApp.$data.ws.onclose = function (evt) {
         wsApp.$data.connectionState = 'CLOSED';
         clearBoard();
+        window.clearTimeout(idleTimeoutHandle);
+
         if (!userDisconnect) {
           console.log('Socket is closed.', evt.reason, ' Reconnect will be attempted.');
           setTimeout(function() {
@@ -95,6 +117,14 @@ function renderShips(ships) {
 
     // place ship on proper Tile
     board.setEntityOnTile(sprites[i], tile);
+
+    // help out the Newbies
+    if (shipGridCoordinates == "0.0.0") {
+      //alert("Select your ship and move to another hexagon");
+    	scene.add(arrow);
+    } else {
+      scene.remove(arrow);
+    }
   }
 }
 
@@ -134,6 +164,7 @@ window.onload = function(){
       game: 'Loading...',
     }
   });
+  connectServer();
 }
 
 // formatter/format components for rendering pretty DATETIME

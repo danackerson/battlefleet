@@ -4,9 +4,8 @@
     <div id="leftGameInfo" class="gameInfo">
       <fieldset class="gameFieldSet">
         <legend style="color:orange;font-weight:bold;">
-          <a href="/account/" tabindex="1" style="padding-right:5px;">
-            <img class="userProfilePic" style="transform: translateY(15%);" src="{{ $user_profile_pic }}"/>
-            &nbsp;&nbsp;{{ .Account.Commander }}'s</a> Ships <template v-if="game.Ships">(${game.Ships.length})</template>
+          <img class="userProfilePic" style="transform: translateY(15%);" src="{{ $user_profile_pic }}"/>&nbsp;&nbsp;
+          <a href="/account/" tabindex="1" style="padding-right:5px;">{{ .Account.Commander }}'s</a> Ships <template v-if="game.Ships">(${game.Ships.length})</template>
         </legend>
 
         <template v-if="game.Ships">
@@ -103,6 +102,12 @@
 var baseX = 24 * {{ .GridSize }};
 var baseY = 32 * {{ .GridSize }};
 var baseZ = 90;
+// direction (normalized), origin, length, color(hex)
+var origin = new THREE.Vector3(0,40,40);
+var terminus  = new THREE.Vector3(0,0,0);
+var direction = new THREE.Vector3().subVectors(terminus, origin).normalize();
+var arrow = new THREE.ArrowHelper(direction, origin, 50, 0xf00000);
+
 var scene = new vg.Scene({
   element: document.getElementById('grid'),
   cameraPosition: {x:baseX, y:baseY, z:baseZ},

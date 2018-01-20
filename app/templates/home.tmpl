@@ -2,6 +2,15 @@
 var AUTH0_CLIENT_ID = '{{ .AuthData.Auth0ClientID }}';
 var AUTH0_DOMAIN = '{{ .AuthData.Auth0Domain }}';
 var AUTH0_CALLBACK_URL = '{{ .AuthData.Auth0CallbackURL }}';
+
+function validateName(redirect) {
+  var name = document.forms['regForm'].elements['cmdrName'].value;
+  if (name == "" || name == null) {
+    alert('Identify yourself, Captain...');
+  } else {
+    document.forms['regForm'].submit();
+  }
+}
 </script>
 <div id="dialogBox" style="top: 0px; display: block;">
   <div class="dialogTop"></div>
@@ -25,20 +34,21 @@ var AUTH0_CALLBACK_URL = '{{ .AuthData.Auth0CallbackURL }}';
   {{ end }}
       </div>
 
-      <form method="post" action="/games/{{ .Account.CurrentGameID }}?ts={{ curr_time }}" name="reg_form" id="reg_form">
+      <form name="regForm" method="post" action="/games/{{ .Account.CurrentGameID }}?ts={{ curr_time }}" name="reg_form" id="reg_form">
         <div class="formbox">
         {{ if eq .Account.Commander "stranger!" }}
           <div class="row">
             <div class="left"><label for="cmdrName">Name:</label></div>
             <div class="right">
-              <input type="text" name="cmdrName" required id="reg_user" size="25" value="" tabindex="10">
+              <input type="text" name="cmdrName" required id="reg_user"
+                size="25" oninvalid="validateName();"
+                value="Anonymous" tabindex="10">
             </div>
           </div>
-        {{ end }}
           <div class="buttonrow" style="margin-top:25px;">
-        {{ if eq .Account.Commander "stranger!" }}
-            <input type="button" onclick="form.submit();" value="New game!" />
+            <input type="button" onclick="validateName();" value="New game!" />
         {{ else }}
+          <div class="buttonrow" style="margin-top:25px;">
           {{ if lt (len .Account.Games) 3 }}
             <input type="button" onclick="location.href='/games/__new__?ts={{ curr_time }}';" value="New game!" />
           {{ end }}

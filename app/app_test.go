@@ -51,7 +51,11 @@ func prepareServeHTTP(context *testRequestContext) (*httptest.ResponseRecorder, 
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
 	if context.sessionCookie != "" {
-		req.AddCookie(&http.Cookie{Name: app.SessionCookieKey, Value: context.sessionCookie, Expires: time.Now().Add(30 * 24 * time.Hour)})
+		req.AddCookie(&http.Cookie{
+			Name:    app.SessionCookieKey,
+			Value:   context.sessionCookie,
+			Expires: time.Now().Add(30 * 24 * time.Hour),
+		})
 	}
 	if len(context.headers) > 0 {
 		for key, value := range context.headers {
