@@ -14,7 +14,7 @@ jobs:
             apk add -U jq curl openssh-client build-base git
 
             # https://download.docker.com/linux/static/stable/x86_64/
-            VER="17.09.0"
+            VER="17.12.0"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
 
             rm docker-$VER-ce.tgz && rm -f /var/cache/apk/*
@@ -67,6 +67,9 @@ jobs:
             ssh-add -l
 
             export DEPLOY_SERVER=deploy.ackerson.de
+            if [ $DEPLOY_SERVER_IP ]; then
+              export DEPLOY_SERVER=$DEPLOY_SERVER_IP
+            fi
             echo "Deploy to $DEPLOY_SERVER"
 
             export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
@@ -88,6 +91,12 @@ jobs:
               --name battlefleet danackerson/battlefleet:vc$CIRCLE_BUILD_NUM"
             $DEPLOY_CONNECT $DOCKER_RUN
 
+            if [ $DEPLOY_SERVER_IP ]; then
+              # Bender also needs to be deployed to new server
+              curl --user ${CIRCLE_API_TOKEN}: \
+                --data build_parameters[DEPLOY_SERVER_IP]=$DEPLOY_SERVER_IP \
+                https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/bender-slackbot/tree/master
+            fi
       - run:
           name: Reenable Digital Ocean firewall
           command: |
