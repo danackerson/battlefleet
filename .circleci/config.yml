@@ -39,6 +39,8 @@ jobs:
           command: |
             env GOOS=linux GOARCH=386 go build -o server server.go
             docker build --compress -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
 
       - add-ssh-keys:
           fingerprints:
@@ -60,9 +62,6 @@ jobs:
       - deploy:
           name: "Upload to DockerHub, deploy container to Digital Ocean Droplet & launch"
           command: |
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
-            docker push danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
-
             source ~/.ssh_agent_conf
             ssh-add -l
 
