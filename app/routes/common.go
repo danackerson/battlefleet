@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
@@ -44,16 +43,14 @@ func RetrieveSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 		origError := err
 		log.Println(origError)
 		session.Options.MaxAge = -1
-		session.Save(r, w)
+		session.Save(r, w) // destroys the session
+
+		session.Options.MaxAge = app.SessionMaxAge
 		session, err = app.SessionStore.New(r, app.SessionCookieKey)
+		session.Save(r, w) // renews the session
 		if err != nil {
-			if !strings.Contains(err.Error(), "no such file or directory") {
-				t, _ := template.New("errorPage").Parse(errorPage)
-				t.Execute(w, "recreateSession: "+err.Error()+" (after '"+origError.Error()+"')")
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
-			}
+			log.Println("recreateSession: " + err.Error() + " (after '" + origError.Error() + "')")
 		}
-		session.Save(r, w)
 
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	}

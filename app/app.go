@@ -28,6 +28,7 @@ var (
 	Version          string
 	DB               *mgo.Session
 	SessionStore     *sessions.FilesystemStore
+	SessionMaxAge    int
 	AuthZeroData     Auth0Data
 )
 
@@ -62,11 +63,11 @@ func prepareSessionEnvironment(isUnitTest bool) {
 	ProdSession, _ = strconv.ParseBool(os.Getenv("prodSession"))
 	if !ProdSession {
 		URIScheme = "http"
-		maxAge := 7 * 24 * 3600 // 1 week
+		SessionMaxAge := 7 * 24 * 3600 // 1 week
 		SessionStore.Options = &sessions.Options{
 			Path:   "/",
 			Domain: "localhost",
-			MaxAge: maxAge, // one week
+			MaxAge: SessionMaxAge, // one week
 		}
 
 		// load test vars from .env
@@ -80,11 +81,11 @@ func prepareSessionEnvironment(isUnitTest bool) {
 		}
 	} else {
 		URIScheme = "https"
-		maxAge := 3600 * 24 * 365 // 1 year expiration
+		SessionMaxAge := 3600 * 24 * 365 // 1 year expiration
 		SessionStore.Options = &sessions.Options{
 			Path:     "/",
 			Domain:   "battlefleet.online",
-			MaxAge:   maxAge,
+			MaxAge:   SessionMaxAge,
 			Secure:   true,
 			HttpOnly: true,
 		}

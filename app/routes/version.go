@@ -7,14 +7,15 @@ import (
 	"github.com/danackerson/battlefleet/app"
 )
 
-type version struct {
+// Version of application build
+type Version struct {
 	URL string
 	Tag string
 }
 
-// GetVersionURL does what it says on the box
-func GetVersionInfo() *version {
-	versionInfo := &version{
+// GetVersionInfo does what it says on the box
+func GetVersionInfo() *Version {
+	versionInfo := &Version{
 		URL: "https://circleci.com/gh/danackerson/battlefleet/" + app.Version,
 		Tag: app.Version,
 	}
