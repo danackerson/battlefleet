@@ -81,6 +81,11 @@ func prepareSessionEnvironment(isUnitTest bool) {
 		}
 	} else {
 		URIScheme = "https"
+		envDir := "../.env"
+		err := godotenv.Load(envDir)
+		if err != nil {
+			log.Fatalf("env var load failure: %s", err.Error())
+		}
 		SessionMaxAge := 3600 * 24 * 365 // 1 year expiration
 		SessionStore.Options = &sessions.Options{
 			Path:     "/",

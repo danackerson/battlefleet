@@ -1,11 +1,13 @@
 package routes
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
@@ -35,6 +37,22 @@ const errorPage = `
 		If this problem persists, please forward this msg to admin@ackerson.de:<br/><br/>
 		{{ . }}<br/><br/>
 `
+
+func dumpRequest(req *http.Request) {
+	var request []string
+	// Add the request string
+	url := fmt.Sprintf("%v %v %v", req.Method, req.URL, req.Proto)
+	request = append(request, url)
+	request = append(request, fmt.Sprintf("Host: %v", req.Host))
+	// Loop through headers
+	for name, headers := range req.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+	log.Printf("Host: %s", request)
+}
 
 // RetrieveSession fetches existing session store, or, if unavailable, recreates
 func RetrieveSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
