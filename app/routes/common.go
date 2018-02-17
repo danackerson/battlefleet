@@ -77,7 +77,7 @@ func RetrieveSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 }
 
 // SetUpMuxHandlers sets up the router
-func SetUpMuxHandlers(isUnitTest bool) *mux.Router {
+func SetUpMuxHandlers(isMainExec bool) *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/", HomeHandler)
 	router.HandleFunc("/callback", CallbackHandler)
@@ -91,7 +91,7 @@ func SetUpMuxHandlers(isUnitTest bool) *mux.Router {
 	})
 
 	templateDir := os.Getenv("TEMPLATE_DIR")
-	if isUnitTest {
+	if !isMainExec {
 		templateDir = "templates"
 	}
 	renderer = render.New(render.Options{

@@ -22,13 +22,19 @@ func checkAPICall(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 }
 
 func main() {
-	isUnitTest := false // main() is only called from full application start
-	app.Init(isUnitTest)
-
-	router := routes.SetUpMuxHandlers(isUnitTest)
-	n := negroni.Classic()
+	n := negroni.New()
 	n.Use(negroni.HandlerFunc(checkAPICall))
-	n.UseHandler(router)
+
+	logger := negroni.NewLogger()
+	logger.SetFormat("{{.StartTime}} {{.Request.RemoteAddr}} {{.Method}} {{.Path}} @ {{.Hostname}} - [{{.Status}} {{.Duration}}] - \"{{.Request.UserAgent}}\"\n")
+	n.Use(logger)
+
+	n.Use(negroni.NewRecovery())
+	n.Use(negroni.NewStatic(http.Dir("public")))
+
+	isMainExec := true // main() is only called from full application start
+	app.Init(isMainExec)
+	n.UseHandler(routes.SetUpMuxHandlers(isMainExec))
 
 	http.ListenAndServe(app.HTTPPort, n)
 }

@@ -23,10 +23,10 @@ import (
 var router *mux.Router
 
 func init() {
-	isUnitTest := true
-	app.Init(isUnitTest)
+	isMainExec := false
+	app.Init(isMainExec)
 	os.Setenv("TEMPLATE_DIR", "templates") // override for testing
-	router = routes.SetUpMuxHandlers(isUnitTest)
+	router = routes.SetUpMuxHandlers(isMainExec)
 }
 
 type testRequestContext struct {

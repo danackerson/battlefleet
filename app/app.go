@@ -48,12 +48,12 @@ type Auth0Data struct {
 }
 
 // Init all the state and session information for the application
-func Init(isUnitTest bool) {
-	prepareSessionEnvironment(isUnitTest)
+func Init(isMainExec bool) {
+	prepareSessionEnvironment(isMainExec)
 	setupMongoDBSession()
 }
 
-func prepareSessionEnvironment(isUnitTest bool) {
+func prepareSessionEnvironment(isMainExec bool) {
 	SessionStore = sessions.NewFilesystemStore("/tmp", []byte(os.Getenv("bfSecret")))
 	SessionStore.MaxLength(32 * 1024) // else securecookie: value too long error
 	gob.Register(&structures.Account{})
@@ -72,7 +72,7 @@ func prepareSessionEnvironment(isUnitTest bool) {
 
 		// load test vars from .env
 		envDir := "../.env"
-		if !isUnitTest {
+		if isMainExec {
 			envDir = ".env"
 		}
 		err := godotenv.Load(envDir)
@@ -117,7 +117,7 @@ func setupMongoDBSession() {
 	err := errors.New("")
 	DB, err = mgo.DialWithInfo(mongoDBDialInfo)
 	if err != nil {
-		log.Fatalf("Cannot Dial Mongo: %s", err.Error())
+		log.Fatalf("No connection to MongoDB: %s", err.Error())
 	}
 	DB.SetMode(mgo.Monotonic, true)
 }
