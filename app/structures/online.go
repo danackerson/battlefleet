@@ -6,8 +6,19 @@ import (
 
 var onlineAccounts []*Account
 
+// AddOnlineAccount to list of online accounts
 func AddOnlineAccount(account *Account) {
-	onlineAccounts = append(onlineAccounts, account)
+	alreadyOnline := false
+	for _, accountCheck := range onlineAccounts {
+		if accountCheck.ID == account.ID {
+			alreadyOnline = true
+			break
+		}
+	}
+
+	if !alreadyOnline {
+		onlineAccounts = append(onlineAccounts, account)
+	}
 }
 
 // GetOnlineAccounts returns all onlineAccounts
