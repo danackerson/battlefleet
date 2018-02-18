@@ -104,6 +104,9 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 			redirected = true
 			return redirected
 		}
+
+		structures.AddOnlineAccount(account)
+
 		http.Redirect(w, r, "/games/"+gameUUID, http.StatusMovedPermanently)
 		redirected = true
 		return redirected

@@ -35,7 +35,7 @@ jobs:
           path: /tmp/test-results
 
       - run:
-          name: "Build the docker image"
+          name: "Build the docker image & upload to DockerHub"
           command: |
             env GOOS=linux GOARCH=386 go build -o server server.go
             docker build --compress -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
@@ -60,7 +60,7 @@ jobs:
             curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/disableFW.sh | sh
 
       - deploy:
-          name: "Upload to DockerHub, deploy container to Digital Ocean Droplet & launch"
+          name: "deploy container to Digital Ocean Droplet & launch"
           command: |
             source ~/.ssh_agent_conf
             ssh-add -l

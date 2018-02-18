@@ -16,6 +16,10 @@ func checkAPICall(w http.ResponseWriter, r *http.Request, next http.HandlerFunc)
 			!strings.HasPrefix(r.URL.RequestURI(), "/api") {
 			http.Redirect(w, r, "https://battlefleet.online/", http.StatusMovedPermanently)
 		}
+		// and API calls to battlefleet are redirected to api.battlefleet.online
+	} else if strings.HasPrefix(r.URL.RequestURI(), "/version") ||
+		strings.HasPrefix(r.URL.RequestURI(), "/api") {
+		http.Redirect(w, r, "https://api.battlefleet.online/", http.StatusMovedPermanently)
 	}
 
 	next(w, r)

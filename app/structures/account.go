@@ -9,8 +9,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var onlineAccounts []*Account
-
 // Account object representing a user account
 type Account struct {
 	ID            bson.ObjectId `bson:"_id,omitempty"`
@@ -33,8 +31,6 @@ func NewAccount(username string) *Account {
 		LastLogin:     time.Now(),
 		LastLogout:    time.Now(),
 	}
-
-	onlineAccounts = append(onlineAccounts, account)
 
 	return account
 }
@@ -73,20 +69,6 @@ func (account *Account) AddGame(game *Game) {
 	account.Games = append(account.Games, game)
 }
 
-// GetAccount finds the account among the online sessions
-func GetAccount(accountID bson.ObjectId) *Account {
-	account := &Account{}
-	for _, accountToCheck := range onlineAccounts {
-		if accountToCheck.ID == accountID {
-			account = accountToCheck
-			break
-		}
-	}
-
-	// if account == nil => TODO: go search in MongoDB?
-	return account
-}
-
 // GetGame returns the current active game from chosen account
 func (account *Account) GetGame() *Game {
 	currentGame := &Game{}
@@ -102,16 +84,7 @@ func (account *Account) GetGame() *Game {
 }
 
 func removeAccountFromActiveSessions(account Account) {
-	for index, accountToCheck := range onlineAccounts {
-		if accountToCheck.ID == account.ID {
-			// set current node to copy of last node
-			onlineAccounts[index] = onlineAccounts[len(onlineAccounts)-1]
-
-			// cut off last node and set as new list
-			onlineAccounts = onlineAccounts[:len(onlineAccounts)-1]
-			break
-		}
-	}
+	RemoveOnlineAccount(account.ID)
 }
 
 // EndSession by removing account

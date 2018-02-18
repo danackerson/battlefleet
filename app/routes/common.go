@@ -80,6 +80,7 @@ func RetrieveSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 func SetUpMuxHandlers(isMainExec bool) *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/", HomeHandler)
+	router.HandleFunc("/api", APIAccountsHandler)
 	router.HandleFunc("/callback", CallbackHandler)
 	router.HandleFunc("/games/{gameid}", GameHandler).Name("games")
 	router.HandleFunc("/account/", AccountHandler)
