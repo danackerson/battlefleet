@@ -82,6 +82,8 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 				redirected = true
 				return redirected
 			}
+
+			structures.AddOnlineAccount(account)
 		} else {
 			t, _ := template.New("errorPage").Parse(errorPage)
 			errorString := "You neither own Game ID:<span style='color:orange;'>" + gameUUID + "</span> nor have you been invited to join."
