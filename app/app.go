@@ -5,6 +5,7 @@ import (
 	"errors"
 	"html/template"
 	"log"
+	"net"
 	"os"
 	"strconv"
 	"time"
@@ -53,6 +54,19 @@ func Init(isMainExec bool) {
 	setupMongoDBSession()
 }
 
+// GetOutboundIP or preferred outbound ip of this machine
+func GetOutboundIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
+}
+
 func prepareSessionEnvironment(isMainExec bool) {
 	SessionStore = sessions.NewFilesystemStore("/tmp", []byte(os.Getenv("bfSecret")))
 	SessionStore.MaxLength(32 * 1024) // else securecookie: value too long error
@@ -64,9 +78,10 @@ func prepareSessionEnvironment(isMainExec bool) {
 	if !ProdSession {
 		URIScheme = "http"
 		SessionMaxAge := 7 * 24 * 3600 // 1 week
+
 		SessionStore.Options = &sessions.Options{
 			Path:   "/",
-			Domain: "localhost",
+			Domain: "localhost",   // NOTE: use `GetOutboundIP().String()` for local, Mobile device testing
 			MaxAge: SessionMaxAge, // one week
 		}
 
