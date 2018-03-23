@@ -34,7 +34,7 @@ func main() {
 	n.Use(logger)
 
 	n.Use(negroni.NewRecovery())
-	n.Use(negroni.NewStatic(http.Dir("spa-mat")))
+	n.Use(negroni.NewStatic(http.Dir("public")))
 
 	isMainExec := true // main() is only called from full application start
 	app.Init(isMainExec)
