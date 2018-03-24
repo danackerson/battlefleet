@@ -44,6 +44,7 @@ jobs:
             yarn
             quasar build -c
             mv dist/spa-mat/* ../public/
+            cd ../
 
             docker build --compress -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
             docker login -u $DOCKER_USER -p $DOCKER_PASS
