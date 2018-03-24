@@ -17,5 +17,8 @@ RUN cat dist/spa-mat/js/app.*
 # copy html files over to the public directory for serving
 RUN mv dist/spa-mat/* ../public/
 
+RUN ls -lrt ../public/js/
+RUN cat ../public/js/app.*
+
 WORKDIR /app
 ENTRYPOINT ["/app/server"]
