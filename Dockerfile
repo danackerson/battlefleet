@@ -3,7 +3,6 @@ RUN apk --no-cache add curl nodejs
 
 # copy over web application
 ADD . /app/
-WORKDIR /app
 
 # run webpack
 RUN npm i quasar-cli yarn -g
@@ -12,6 +11,7 @@ RUN yarn
 RUN quasar build -c
 
 # copy html files over to the public directory for serving
-RUN mv dist/spa-mat/* ../public/
+RUN mv /app/quasar/dist/spa-mat/* /app/public/
 
+WORKDIR /app
 ENTRYPOINT ["/app/server"]
