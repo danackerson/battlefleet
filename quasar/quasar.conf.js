@@ -6,7 +6,8 @@ module.exports = function (ctx) {
   return {
     // app plugins (/src/plugins)
     plugins: [
-      'axios'
+      'axios',
+      'google-analytics'
     ],
     css: [
       'app.styl'

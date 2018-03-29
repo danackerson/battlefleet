@@ -28,10 +28,14 @@
 
     <%= htmlWebpackPlugin.options.headScripts %>
 
-    <!--
-      The following is optional if you DON'T build for PWA.
-      Preloads/prefetches chunks/assets.
-    -->
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WG4774D');</script>
+    <!-- End Google Tag Manager -->
+
     <% if (!['cordova', 'electron'].includes(htmlWebpackPlugin.options.ctx.modeName) && htmlWebpackPlugin.options.ctx.prod) {
         for (var chunk of webpack.chunks) {
           for (var file of chunk.files) {
@@ -43,6 +47,8 @@
     <% if (!htmlWebpackPlugin.options.ctx.mode.electron) { %>
       <noscript>
         This is your fallback content in case JavaScript fails to load.
+        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WG4774D"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe>
       </noscript>
     <% } %>
 
