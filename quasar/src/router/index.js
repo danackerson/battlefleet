@@ -1,9 +1,10 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-
-// import store from 'src/store'
+import auth from 'src/battlefleet/auth'
+import store from 'src/store'
 import routes from './routes'
 
+Vue.use(auth)
 Vue.use(VueRouter)
 
 const Router = new VueRouter({

@@ -21,7 +21,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		ClientID:     app.AuthZeroData.Auth0ClientID,
 		ClientSecret: app.AuthZeroData.Auth0ClientSecret,
 		RedirectURL:  app.AuthZeroData.Auth0CallbackURLString,
-		Scopes:       []string{"openid", "profile"},
+		Scopes:       []string{"openid", "profile", "email"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://" + domain + "/authorize",
 			TokenURL: "https://" + domain + "/oauth/token",
