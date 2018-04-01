@@ -3,7 +3,7 @@
     <div>
       <h3 v-if="this.$auth.isAuthenticated()">{{$auth.user.name}}'s IP is {{ ip }}</h3>
       <h3 v-else>Your IP is {{ ip }}</h3>
-      <input type="button" @click="toggleAuth" v-model="authState">
+      <button type="text" @click="toggleAuth" v-model="authState">{{ authState }}</button>
     </div>
   </div>
 </template>
@@ -22,7 +22,7 @@ export default {
   data () {
     return {
       ip: '',
-      authState: this.$auth.isAuthenticated ? 'Logout' : 'Login'
+      authState: this.$auth.isAuthenticated() ? 'Logout' : 'Login'
     }
   },
   mounted () {
@@ -34,12 +34,11 @@ export default {
   },
   methods: {
     toggleAuth() {
-      if (this.$auth == 'undefined' || this.$auth.isAuthenticated()) {
+      if (this.$auth.isAuthenticated()) {
         this.$auth.logout()
         this.authState = 'Login'
       } else {
         this.$auth.login()
-        this.authState = 'Logout'
       }
     }
   }
