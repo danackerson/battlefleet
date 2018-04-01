@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div>
+    <div class="rightPanel">
       <h3 v-if="this.$auth.isAuthenticated()">{{$auth.user.name}}'s IP is {{ ip }}</h3>
       <h3 v-else>Your IP is {{ ip }}</h3>
       <button type="text" @click="toggleAuth" v-model="authState">{{ authState }}</button>
@@ -11,6 +11,9 @@
 <style>
 h1, h2 {
   font-weight: normal;
+}
+div.rightPanel {
+  text-align: center;
 }
 </style>
 
