@@ -3,3 +3,4 @@ tmp/
 debug
 debug.test
 .env
+quasar/**
