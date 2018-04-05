@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex flex-center">
-    <img alt="Quasar logo" src="~assets/quasar-logo-full.svg">
+    <p>Space</p>
   </q-page>
 </template>
 
@@ -9,6 +9,11 @@
 
 <script>
 export default {
-  name: 'PageIndex'
+  name: 'PageIndex',
+  methods: {
+    clickButton: function(val) {
+        this.$socket.sendObj({awesome: 'data'})
+    }
+  }
 }
 </script>
