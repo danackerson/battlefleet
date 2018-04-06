@@ -48,24 +48,26 @@ func ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 	//go retrieveGame(ws, w, r)
 }
 
+type serverTimeStr struct {
+	Time string
+}
+
 func serverTime(ws *websocket.Conn) {
 	defer ws.Close()
 
 	for {
-		// even though we don't do much with the Reads (yet)
-		// it's helpful to negotiate client side CLOSE requests
 		// msg types: https://github.com/gorilla/websocket/blob/master/conn.go#L61
-		messageType, msg, err := ws.ReadMessage()
-		log.Printf("%d: %s (ERR: %v)", messageType, msg, err)
 
-		if messageType != -1 && messageType != 8 {
-			serverTimeBytes := time.Now().Format(time.UnixDate)
-			if err = ws.WriteMessage(websocket.TextMessage, []byte(serverTimeBytes)); err != nil {
-				log.Printf("%d: %s (ERR: %s)", messageType, msg, err.Error())
-				return
-			}
-		} else {
-			log.Printf("Client hung up...good-bye!\n")
+		/* Realize if we block here with a ReadJSON method, the server won't forever WriteJSON ;)
+		var clientMsg interface{}
+		err := ws.ReadJSON(clientMsg)
+		log.Printf("RCVD %v", clientMsg)
+		*/
+
+		// TODO: you need to register some "mutation" in VueJS to react to this server msg!
+		serverTimeBytes := time.Now().Format(time.UnixDate)
+		if err := ws.WriteJSON(serverTimeStr{serverTimeBytes}); err != nil {
+			log.Printf("SENT %s (ERR: %s)", serverTimeStr{serverTimeBytes}, err.Error())
 			return
 		}
 

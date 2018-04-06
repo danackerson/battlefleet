@@ -9,11 +9,6 @@
 
 <script>
 export default {
-  name: 'PageIndex',
-  methods: {
-    clickButton: function(val) {
-        this.$socket.sendObj({awesome: 'data'})
-    }
-  }
+  name: 'PageIndex'
 }
 </script>

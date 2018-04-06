@@ -5,7 +5,8 @@
     <button v-on:click="sendData()">Send</button>
     <br />
     <br />
-    <textarea v-model="response"/>
+    <textarea v-model="JSON.stringify(response)"/>
+    <button v-on:click="clickButton()">Submit</button>
   </div>
 </template>
 
@@ -26,7 +27,7 @@ export default {
   methods: {
     sendData () {
       axios({ method: 'POST', 'url': 'https://httpbin.org/post', 'data': this.input, 'headers': { 'content-type': 'application/json' } }).then(result => {
-        this.response = JSON.stringify(result.data)
+        this.response = result.data
       }).catch(e => this.$q.notify({
         color: 'negative',
         position: 'top',
@@ -34,6 +35,9 @@ export default {
         icon: 'report_problem'
       }))
       console.log(this.response)
+    },
+    clickButton () {
+        this.$socket.sendObj(this.response)
     }
   }
 }

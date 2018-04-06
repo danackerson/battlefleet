@@ -18,7 +18,7 @@ import (
 
 var (
 	ProdSession      = false
-	HTTPPort         = ":8083"
+	HTTPPort         = ":8083" // must also be changed in quasar.conf.js => build.env.PORT
 	SessionCookieKey = "battlefleetID"
 	AccountIDKey     = "ownerAccountID"
 	AccountKey       = "ownerAccount"

@@ -5,7 +5,12 @@ import example from './module-example'
 import VueNativeSock from 'vue-native-websocket'
 
 Vue.use(Vuex)
-Vue.use(VueNativeSock, 'ws://localhost:8083/wsInit', {
+var hostURL = "wss://"
+if (location.protocol == "http:") {
+  hostURL = "ws://"
+}
+hostURL += location.hostname + ':' + process.env.PORT
+Vue.use(VueNativeSock, hostURL + '/wsInit', {
   store: store,
   connectManually: true,
   format: 'json',
@@ -28,23 +33,23 @@ const store = new Vuex.Store({
   mutations:{
     SOCKET_ONOPEN (state, event)  {
       state.socket.isConnected = true
-      this.console.log(state.socket)
+      console.log('WS Connected')
     },
     SOCKET_ONCLOSE (state, event)  {
       state.socket.isConnected = false
-      this.console.log(state.socket)
+      console.log('WS Disconnected')
     },
     SOCKET_ONERROR (state, event)  {
-      this.console.error(state, event)
+      console.error('WS ERROR: ', state, event)
     },
     // default handler called for all methods
     SOCKET_ONMESSAGE (state, message)  {
       state.message = message
-      this.console.log(state.message)
+      console.log('WS MSG: ', message)
     },
     // mutations for reconnect methods
     SOCKET_RECONNECT(state, count) {
-      this.console.info(state, count)
+      console.info('WS Reconnect...', state, count)
     },
     SOCKET_RECONNECT_ERROR(state) {
       state.socket.reconnectError = true;

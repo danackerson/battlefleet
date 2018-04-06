@@ -25,6 +25,13 @@ module.exports = function (ctx) {
       remove: []
     },
     build: {
+      env: ctx.dev
+      ? {
+        PORT: 8083
+      }
+      : {
+        PORT: 8083
+      },
       scopeHoisting: true,
       vueRouterMode: 'history',
       publicPath: '/',
