@@ -25,12 +25,10 @@ module.exports = function (ctx) {
       remove: []
     },
     build: {
-      env: ctx.dev
-      ? {
-        PORT: 8083
-      }
-      : {
-        PORT: 8083
+      env: {
+        PORT: 8083,
+        AUTH0_CLIENT_ID: '"' + process.env.AUTH0_CLIENT_ID + '"',
+        AUTH0_CALLBACK_URL: '"' + process.env.AUTH0_CALLBACK_URL + '"'
       },
       scopeHoisting: true,
       vueRouterMode: 'history',

@@ -5,29 +5,22 @@ import example from './module-example'
 import VueNativeSock from 'vue-native-websocket'
 
 Vue.use(Vuex)
-var hostURL = "wss://"
-if (location.protocol == "http:") {
-  hostURL = "ws://"
-}
-hostURL += location.hostname + ':' + process.env.PORT
-Vue.use(VueNativeSock, hostURL + '/wsInit', {
-  store: store,
-  connectManually: true,
-  format: 'json',
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 3000,
-})
 
 const store = new Vuex.Store({
   modules: {
     example
   },
   state: {
+    count: 0,
     socket: {
       isConnected: false,
-      message: '',
+      message: 'Space',
       reconnectError: false,
+    }
+  },
+  actions: {
+    currentServerTime (context) {
+      console.error('RCVD currentServerTime: ' + JSON.stringify(context))
     }
   },
   mutations:{
@@ -44,17 +37,34 @@ const store = new Vuex.Store({
     },
     // default handler called for all methods
     SOCKET_ONMESSAGE (state, message)  {
-      state.message = message
+      state.socket.message = message
       console.log('WS MSG: ', message)
     },
     // mutations for reconnect methods
-    SOCKET_RECONNECT(state, count) {
-      console.info('WS Reconnect...', state, count)
+    SOCKET_RECONNECT (state, count) {
+      console.info(state, count)
     },
-    SOCKET_RECONNECT_ERROR(state) {
+    SOCKET_RECONNECT_ERROR (state) {
       state.socket.reconnectError = true;
     },
+    increment (state) {
+      state.count++
+    }
   }
+})
+
+var hostURL = "wss://"
+if (location.protocol == "http:") {
+  hostURL = "ws://"
+}
+hostURL += location.hostname + ':' + process.env.PORT
+Vue.use(VueNativeSock, hostURL + '/wsInit', {
+  store: store,
+  connectManually: true,
+  format: 'json',
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 3000,
 })
 
 export default store

@@ -4,8 +4,8 @@ import Vue from 'vue'
 // exchange the object with your own from the setup step above.
 let webAuth = new auth0.WebAuth({
     domain: 'battlefleet.eu.auth0.com',
-    clientID: 'kvOcNm3klMGSxTfzD5mvg23C7vgcYvij',
-    redirectUri: 'http://localhost:8443/callback',
+    clientID: process.env.AUTH0_CLIENT_ID,
+    redirectUri: process.env.AUTH0_CALLBACK_URL,
     audience: 'https://battlefleet.eu.auth0.com/api/v2/', // userinfo
     responseType: 'token id_token',
     scope: 'openid profile'

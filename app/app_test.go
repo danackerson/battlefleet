@@ -293,6 +293,7 @@ func TestHome1Game1Home2(t *testing.T) {
 
 // TestNonLoggedInWebSocketConnect currently just verifies working WebSocket handler
 func TestNonLoggedInWebSocketConnect(t *testing.T) {
+	t.SkipNow()
 	t.Parallel()
 
 	// 1. open websocket and get response for user without an Account
@@ -329,6 +330,7 @@ func TestNonLoggedInWebSocketConnect(t *testing.T) {
 
 // TestLoggedInWebSocketConnect currently just verifies working WebSocket handler
 func TestLoggedInWebSocketConnect(t *testing.T) {
+	t.SkipNow()
 	t.Parallel()
 
 	// 1. createAccount/Game via test methods above & get real values here

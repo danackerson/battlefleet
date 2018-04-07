@@ -7,6 +7,7 @@
     <br />
     <textarea v-model="JSON.stringify(response)"/>
     <button v-on:click="clickButton()">Submit</button>
+    {{ this.$store.state.count }}
   </div>
 </template>
 
