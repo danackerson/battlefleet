@@ -25,8 +25,13 @@ module.exports = function (ctx) {
       remove: []
     },
     build: {
-      env: {
+      env: ctx.dev ? {
         PORT: 8083,
+        AUTH0_CLIENT_ID: '"' + process.env.AUTH0_CLIENT_ID + '"',
+        AUTH0_CALLBACK_URL: '"' + process.env.AUTH0_CALLBACK_URL + '"'
+      }
+      :{
+        PORT: 443,
         AUTH0_CLIENT_ID: '"' + process.env.AUTH0_CLIENT_ID + '"',
         AUTH0_CALLBACK_URL: '"' + process.env.AUTH0_CALLBACK_URL + '"'
       },
