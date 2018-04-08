@@ -50,7 +50,7 @@ func ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 
 type serverTimeStr struct {
 	Action   string `json:"action"`
-	Time     string `json:"time,omitempty"`
+	Time     int64  `json:"time,omitempty"`
 	Mutation string `json:"mutation,omitempty"`
 }
 
@@ -60,22 +60,21 @@ func serverTime(ws *websocket.Conn) {
 	for {
 		// msg types: https://github.com/gorilla/websocket/blob/master/conn.go#L61
 
-		/* Realize if we block here with a ReadJSON method, the server won't forever WriteJSON ;)
+		// Realize if we block here with a ReadJSON method, the server won't forever WriteJSON ;)
 		var clientMsg interface{}
 		err := ws.ReadJSON(&clientMsg)
 		if err != nil {
 			log.Println(err.Error())
 		}
-		log.Printf("RCVD %v", clientMsg)*/
+		log.Printf("RCVD %v", clientMsg)
 
 		// TODO: you need to register some "mutation" in VueJS to react to this server msg!
-		serverTimeBytes := time.Now().Format(time.UnixDate)
 		srvTime := serverTimeStr{}
 		srvTime.Action = "currentServerTime"
-		srvTime.Time = serverTimeBytes
-		srvTime.Mutation = "SOCKET_ONMESSAGE"
+		srvTime.Time = time.Now().Unix()
+		//srvTime.Mutation = "SOCKET_ONMESSAGE"
 		if err := ws.WriteJSON(srvTime); err != nil {
-			log.Printf("SENT %s (ERR: %s)", srvTime, err.Error())
+			log.Printf("SENT %v (ERR: %s)", srvTime, err.Error())
 			return
 		}
 

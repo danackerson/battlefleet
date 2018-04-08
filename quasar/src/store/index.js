@@ -5,6 +5,7 @@ import example from './module-example'
 import VueNativeSock from 'vue-native-websocket'
 
 Vue.use(Vuex)
+Vue.use(require('vue-moment')); // date formatting lib
 
 const store = new Vuex.Store({
   modules: {
@@ -19,8 +20,15 @@ const store = new Vuex.Store({
     }
   },
   actions: {
-    currentServerTime (context) {
-      console.error('RCVD currentServerTime: ' + JSON.stringify(context))
+    currentServerTime (context, content) {
+      console.log('RCVD currentServerTime: ' + JSON.stringify(content))
+      this.state.socket.message = content
+      /* interesting code todo something on initial WS connect?
+      this.$store.subscribe((mutation, state) => {
+        if (mutation.type === 'SOCKET_ONOPEN' ) {
+          // your code here
+        }
+      }*/
     }
   },
   mutations:{
@@ -46,9 +54,6 @@ const store = new Vuex.Store({
     },
     SOCKET_RECONNECT_ERROR (state) {
       state.socket.reconnectError = true;
-    },
-    increment (state) {
-      state.count++
     }
   }
 })

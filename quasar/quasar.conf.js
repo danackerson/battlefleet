@@ -56,6 +56,7 @@ module.exports = function (ctx) {
       port: 8443,
       open: true // opens browser window automatically
     },
+    //devtool: '#eval-source-map',
     // framework: 'all' --- includes everything; for dev only!
     framework: {
       components: [
