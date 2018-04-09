@@ -41,11 +41,12 @@ jobs:
 
             npm i quasar-cli yarn -g
             cd quasar/
-            yarn
+            yarn --ignore-optional
             quasar build -c
             mv dist/spa-mat/* ../public/
             cd ../public
-            sed -i -e 's/href=app/href=\/css\/app/g' index.html
+            sed -i -e 's/href=app/href=css\/app/' index.html
+            sed -i -e 's/href=/app/href=\/css\/app/' index.html
             mkdir css
             mv app*.css css/
 
