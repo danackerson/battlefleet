@@ -46,7 +46,7 @@ jobs:
             mv dist/spa-mat/* ../public/
             cd ../public
             sed -i -e 's/href=app/href=css\/app/' index.html
-            sed -i -e 's/href=/app/href=\/css\/app/' index.html
+            sed -i -e 's/href=\/app/href=\/css\/app/' index.html
             mkdir css
             mv app*.css css/
 
