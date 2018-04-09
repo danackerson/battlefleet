@@ -47,6 +47,6 @@ export default {
 <style>
 textarea {
     width: 300px;
-    height: 500px;
+    height: 200px;
 }
 </style>

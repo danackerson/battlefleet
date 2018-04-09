@@ -26,9 +26,9 @@ module.exports = function (ctx) {
     },
     build: {
       env: ctx.dev ? {
-        PORT: 8083,
-        AUTH0_CLIENT_ID: '"' + process.env.AUTH0_CLIENT_ID + '"',
-        AUTH0_CALLBACK_URL: '"' + process.env.AUTH0_CALLBACK_URL + '"'
+        PORT: 8083, // Websocket & Axios port to Golang server
+        AUTH0_CLIENT_ID: '"kvOcNm3klMGSxTfzD5mvg23C7vgcYvij"',
+        AUTH0_CALLBACK_URL: '"http://localhost:8443/callback"'
       }
       :{
         PORT: 443,
