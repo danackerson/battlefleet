@@ -14,7 +14,7 @@ jobs:
             apk add -U jq curl openssh-client build-base git nodejs
 
             # https://download.docker.com/linux/static/stable/x86_64/
-            VER="17.12.0"
+            VER="18.03.0"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
 
             rm docker-$VER-ce.tgz && rm -f /var/cache/apk/*
@@ -48,7 +48,7 @@ jobs:
             sed -i -e 's/href=app/href=\/css\/app/g' index.html
             mkdir css
             mv app*.css css/app*.css
-            
+
             cd ../
             docker build --compress -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
             docker login -u $DOCKER_USER -p $DOCKER_PASS
