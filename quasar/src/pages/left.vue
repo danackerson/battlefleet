@@ -1,13 +1,11 @@
 <template>
   <div>
-    <input type="text" v-model="input.firstname" placeholder="First Name" />
-    <input type="text" v-model="input.lastname" placeholder="Last Name" />
-    <button v-on:click="sendData()">Send</button>
+    <input type="text" v-model="input.cmdrName" placeholder="Commander Name" />
+    <button v-on:click="startGame()">Join the fleet!</button>
     <br />
     <br />
     <textarea v-model="JSON.stringify(response)"/>
-    <button v-on:click="clickButton()">Submit</button>
-    {{ this.$store.state.count }}
+    <button v-on:click="updateTime()">Update Time</button>
   </div>
 </template>
 
@@ -19,25 +17,38 @@ export default {
   data () {
     return {
       input: {
-        firstname: '',
-        lastname: ''
+        cmdrName: ''
       },
       response: ''
     }
   },
   methods: {
-    sendData () {
-      axios({ method: 'POST', 'url': 'https://httpbin.org/post', 'data': this.input, 'headers': { 'content-type': 'application/json' } }).then(result => {
-        this.response = result.data
-      }).catch(e => this.$q.notify({
-        color: 'negative',
-        position: 'top',
-        message: 'Loading failed: ' + e,
-        icon: 'report_problem'
-      }))
+    startGame () {
+      /*axios.get(
+          'http://localhost:8083/post',
+          data: {
+            cmdrName: this.cmdrName
+          }
+        )
+        .then(function (response) {*/
+      axios({
+        method: 'POST',
+        'url': '/post',
+        'data': this.input,
+        'headers': {
+          'content-type': 'application/json'
+          }
+        }).then(result => {
+          this.response = result.data
+        }).catch(e => this.$q.notify({
+          color: 'negative',
+          position: 'top',
+          message: 'Loading failed: ' + e,
+          icon: 'report_problem'
+        }))
       console.log(this.response)
     },
-    clickButton () {
+    updateTime () {
         this.$socket.sendObj(this.response)
     }
   }

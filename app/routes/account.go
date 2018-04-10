@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"strings"
@@ -66,6 +67,17 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 
 func getAccount(r *http.Request, session *sessions.Session) *structures.Account {
 	var account *structures.Account
+
+	decoder := json.NewDecoder(r.Body)
+
+	var cmdrName struct {
+		CmdrName string
+	}
+	err := decoder.Decode(&cmdrName)
+
+	if err != nil {
+		panic(err)
+	}
 
 	if session.Values[app.AccountKey] == nil {
 		if r.FormValue("cmdrName") == "" || r.FormValue("cmdrName") == app.DefaultCmdrName {

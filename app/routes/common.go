@@ -57,7 +57,7 @@ func dumpRequest(req *http.Request) {
 // RetrieveSession fetches existing session store, or, if unavailable, recreates
 func RetrieveSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 	session, err := app.SessionStore.Get(r, app.SessionCookieKey)
-	if err != nil {
+	if err != nil || session.ID == "" {
 		origError := err
 		log.Println(origError)
 		session.Options.MaxAge = -1
@@ -70,7 +70,9 @@ func RetrieveSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 			log.Println("recreateSession: " + err.Error() + " (after '" + origError.Error() + "')")
 		}
 
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		//http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	} else {
+		log.Println("GOT Session: " + session.ID)
 	}
 
 	return session

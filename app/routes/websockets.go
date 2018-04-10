@@ -49,9 +49,10 @@ func ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 type serverTimeStr struct {
-	Action   string `json:"action"`
-	Time     int64  `json:"time,omitempty"`
-	Mutation string `json:"mutation,omitempty"`
+	Action    string `json:"action"`
+	Time      int64  `json:"time,omitempty"`
+	Mutation  string `json:"mutation,omitempty"`
+	SessionID string `json:"sessionID,omitempty"`
 }
 
 func serverTime(ws *websocket.Conn) {
@@ -67,8 +68,8 @@ func serverTime(ws *websocket.Conn) {
 			log.Println(err.Error())
 		}
 		log.Printf("RCVD %v", clientMsg)
+		// TODO: read clientMsg and verify Session
 
-		// TODO: you need to register some "mutation" in VueJS to react to this server msg!
 		srvTime := serverTimeStr{}
 		srvTime.Action = "currentServerTime"
 		srvTime.Time = time.Now().Unix()

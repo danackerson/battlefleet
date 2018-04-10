@@ -2,29 +2,26 @@ package routes
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/danackerson/battlefleet/app"
 	"github.com/danackerson/battlefleet/app/structures"
-	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	uuid "github.com/satori/go.uuid"
 )
 
 // GameHandler for handling game requests
 func GameHandler(w http.ResponseWriter, r *http.Request) {
-	requestParams := mux.Vars(r)
-	parseErr := r.ParseForm()
-	if parseErr != nil {
-		log.Println(parseErr)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
 	session := RetrieveSession(w, r)
 	account := getAccount(r, session)
 	if account != nil {
-		gameUUID := requestParams["gameid"]
+		gameUUID := r.FormValue("gameid")
 		action, ok := r.URL.Query()["action"]
 		if ok && len(action) > 0 && action[0] == "delete" {
 			account.DeleteGame(gameUUID)
