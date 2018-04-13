@@ -28,12 +28,16 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&fields)
 	if err != nil {
 		sendError(w, 502, "failed to decode fields: "+err.Error())
+		return
 	}
 
 	session := RetrieveSession(w, r)
 	account := getAccount(session, fields["cmdrName"])
 	if account != nil {
 		gameUUID := fields["gameID"]
+		if gameUUID == "" {
+			gameUUID = account.CurrentGameID
+		}
 		/*action, ok := r.URL.Query()["action"]
 		if ok && len(action) > 0 && action[0] == "delete" {
 			account.DeleteGame(gameUUID)
@@ -54,7 +58,6 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		}*/
 
 		setupGame(r, w, session, account, gameUUID)
-		//log.Printf("settingUp Game for session: %s & account: %s @ %s\n", session.ID, account.Commander, gameUUID)
 
 		var accountJSON accountType
 		accountJSON.ID = account.ID.Hex()
@@ -69,6 +72,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(gameJSON)
 	} else {
 		sendError(w, 401, "New accounts require a Commander name and '"+app.DefaultCmdrName+"' is not allowed.")
+		return
 	}
 }
 
@@ -88,11 +92,13 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 			session.Values[app.GameUUIDKey] = gameUUID
 			if e := session.Save(r, w); e != nil {
 				sendError(w, 401, "Unable to access your game: "+gameUUID)
+				return
 			}
 
 			structures.AddOnlineAccount(account)
 		} else {
 			sendError(w, 401, "You neither own Game ID:<span style='color:orange;'>"+gameUUID+"</span> nor have you been invited to join.")
+			return
 		}
 	}
 
@@ -105,6 +111,7 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 		session.Values[app.GameUUIDKey] = gameUUID
 		if e := session.Save(r, w); e != nil {
 			sendError(w, 501, "There was a problem creating your game.")
+			return
 		}
 
 		structures.AddOnlineAccount(account)

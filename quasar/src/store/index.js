@@ -6,7 +6,6 @@ import VueNativeSock from 'vue-native-websocket'
 
 Vue.use(Vuex)
 Vue.use(require('vue-moment')); // date formatting lib
-Vue.use(require('vue-cookies'))
 
 const store = new Vuex.Store({
   modules: {
@@ -67,7 +66,7 @@ if (location.protocol == "http:") {
 websocketURL += location.hostname + ':' + process.env.PORT
 Vue.use(VueNativeSock, websocketURL + '/wsInit', {
   store: store,
-  connectManually: true,
+  connectManually: false,
   format: 'json',
   reconnection: true,
   reconnectionAttempts: 5,

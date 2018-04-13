@@ -15,9 +15,11 @@
     <p>Welcome, stranger!</p>
     <br>
     <input type="text" v-model="input.cmdrName" placeholder="Anonymous" required/>
-    <button v-if="input.cmdrName != ''" v-on:click="startGame()">Join the fleet!</button>
+    <button v-if="input.cmdrName.length > 2" v-on:click="startGame()">Join the fleet!</button>
     <label v-else>Enter Name</label>
     <br>
+    <br>
+    <textarea v-model="JSON.stringify(response)"/>
   </div>
 </template>
 
@@ -33,12 +35,23 @@ var start = function(vueX) {
       'content-type': 'application/json'
       }
     }).then(result => {
-      vueX.response = result.data
-      if (result.data.ID != 'undefined') {
+      vueX.response = JSON.parse(JSON.stringify(result.data))
+      if (vueX.response.Error !== undefined) {
+        if (vueX.$cookies.get('battlefleetID') != null &&
+            vueX.response.HTTPCode == '401') {
+          vueX.response.Error = "Your session is no longer on the server. Please login or create a new game."
+        }
+        vueX.$q.notify({
+          color: 'negative',
+          position: 'top',
+          message: vueX.response.Error + ' (' + vueX.response.HTTPCode + ')',
+          icon: 'report_problem'
+        })
+      } else if (result.data.ID !== undefined) {
+        vueX.gameInfo = vueX.response
         vueX.input.gameID = result.data.ID
-        vueX.gameInfo = JSON.parse(JSON.stringify(result.data))
+        vueX.input.cmdrName = vueX.gameInfo.Account.Commander
       }
-      vueX.input.cmdrName = vueX.gameInfo.Account.Commander
     }).catch(e => vueX.$q.notify({
       color: 'negative',
       position: 'top',
@@ -72,6 +85,7 @@ export default {
   },
   mounted () {
     // only interesting if we already have a BattlefleetID cookie
+    // try and auto login/refresh with current game
     if (this.$cookies.get('battlefleetID') != null) {
       start(this)
     }

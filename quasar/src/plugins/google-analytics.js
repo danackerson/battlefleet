@@ -2,10 +2,11 @@ import ga from 'src/battlefleet/analytics'
 
 export default ({ router }) => {
   router.afterEach((to, from) => {
-    if (typeof sessionId == 'undefined') {
-      ga.logPage(to.path, to.name)
-    } else {
+    var sessionId = $cookies.get('battlefleetID')
+    if (sessionId) {
       ga.logPage(to.path, to.name, sessionId)
+    } else {
+      ga.logPage(to.path, to.name)
     }
   })
 }
