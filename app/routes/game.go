@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"html/template"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -13,16 +13,28 @@ import (
 
 // GameHandler for handling game requests
 func GameHandler(w http.ResponseWriter, r *http.Request) {
+	setupCORSOptions(w)
+
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+
+	// defined in left.vue => data => input
+	fields := map[string]string{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&fields)
+	if err != nil {
+		sendError(w, 502, "failed to decode fields: "+err.Error())
+	}
+
 	session := RetrieveSession(w, r)
-	account := getAccount(r, session)
+	account := getAccount(session, fields["cmdrName"])
 	if account != nil {
-		gameUUID := r.FormValue("gameid")
-		action, ok := r.URL.Query()["action"]
+		gameUUID := fields["gameID"]
+		/*action, ok := r.URL.Query()["action"]
 		if ok && len(action) > 0 && action[0] == "delete" {
 			account.DeleteGame(gameUUID)
 			if session.Values[app.GameUUIDKey] == gameUUID {
@@ -39,57 +51,52 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			http.Redirect(w, r, "/account/", http.StatusTemporaryRedirect)
 			return
-		}
+		}*/
 
-		redirected := setupGame(r, w, session, account, gameUUID)
-		if !redirected {
-			renderer.HTML(w, http.StatusOK, "game",
-				map[string]interface{}{
-					"Account": map[string]interface{}{
-						"ID":           account.ID,
-						"Commander":    account.Commander,
-						"Auth0Profile": account.Auth0Profile,
-						"Auth0Token":   account.Auth0Token},
-					"AuthData": app.AuthZeroData,
-					"DevEnv":   !app.ProdSession,
-					"Version":  GetVersionInfo(),
-					"GridSize": structures.GridSize,
-				})
-		}
+		setupGame(r, w, session, account, gameUUID)
+		//log.Printf("settingUp Game for session: %s & account: %s @ %s\n", session.ID, account.Commander, gameUUID)
+
+		var accountJSON accountType
+		accountJSON.ID = account.ID.Hex()
+		accountJSON.Commander = account.Commander
+
+		var gameJSON gameType
+		gameJSON.ID = account.CurrentGameID
+		gameJSON.Account = accountJSON
+		gameJSON.GridSize = structures.GridSize
+		gameJSON.Version = GetVersionInfo()
+
+		json.NewEncoder(w).Encode(gameJSON)
 	} else {
-		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, "New accounts require a Commander name and '"+app.DefaultCmdrName+"' is not allowed.")
-		http.Redirect(w, r, "/", http.StatusPreconditionRequired)
+		sendError(w, 401, "New accounts require a Commander name and '"+app.DefaultCmdrName+"' is not allowed.")
 	}
 }
 
 func setupGame(r *http.Request, w http.ResponseWriter,
-	session *sessions.Session, account *structures.Account, gameUUID string) bool {
-	redirected := false
+	session *sessions.Session, account *structures.Account, gameUUID string) {
 
 	// they come in without a cookie or request a gameID that doesn't match their own
 	if gameUUID != structures.NewGameUUID {
+		if gameUUID == "" && account.CurrentGameID == "" {
+			gameUUID = structures.NewGameUUID
+		} else if gameUUID == "" {
+			gameUUID = account.CurrentGameID
+		}
+
 		if account.OwnsGame(gameUUID) {
 			account.CurrentGameID = gameUUID
 			session.Values[app.GameUUIDKey] = gameUUID
 			if e := session.Save(r, w); e != nil {
-				t, _ := template.New("errorPage").Parse(errorPage)
-				t.Execute(w, "saveSession1: "+e.Error())
-				http.Redirect(w, r, "/", http.StatusInternalServerError)
-				redirected = true
-				return redirected
+				sendError(w, 401, "Unable to access your game: "+gameUUID)
 			}
 
 			structures.AddOnlineAccount(account)
 		} else {
-			t, _ := template.New("errorPage").Parse(errorPage)
-			errorString := "You neither own Game ID:<span style='color:orange;'>" + gameUUID + "</span> nor have you been invited to join."
-			t.Execute(w, template.JS(errorString))
-			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
-			redirected = true
-			return redirected
+			sendError(w, 401, "You neither own Game ID:<span style='color:orange;'>"+gameUUID+"</span> nor have you been invited to join.")
 		}
-	} else if gameUUID == structures.NewGameUUID {
+	}
+
+	if gameUUID == structures.NewGameUUID {
 		sessionIDHash := session.ID + time.Now().String()
 		gameUUID = uuid.NewV5(uuid.NamespaceOID, sessionIDHash).String()
 		newGame := structures.NewGame(gameUUID, account.ID)
@@ -97,19 +104,9 @@ func setupGame(r *http.Request, w http.ResponseWriter,
 		session.Values[app.AccountKey] = account
 		session.Values[app.GameUUIDKey] = gameUUID
 		if e := session.Save(r, w); e != nil {
-			t, _ := template.New("errorPage").Parse(errorPage)
-			t.Execute(w, "saveSession2: "+e.Error())
-			http.Redirect(w, r, "/", http.StatusPreconditionRequired)
-			redirected = true
-			return redirected
+			sendError(w, 501, "There was a problem creating your game.")
 		}
 
 		structures.AddOnlineAccount(account)
-
-		http.Redirect(w, r, "/games/"+gameUUID, http.StatusMovedPermanently)
-		redirected = true
-		return redirected
 	}
-
-	return redirected
 }

@@ -1,0 +1,30 @@
+Non-logged-in User Scenarios:
+- No battlefleetID cookie
+  -- Expect:
+    --- Nothing!
+    --- Do NOTHING (user must enter a Commander Name and/or "Join Fleet!")
+  -- Don't Expect:
+    --- Errors/Warnings
+    --- User/game info
+  -- "Join the fleet" without Commander Name -> Error: Name required
+
+- cookie + no matching server side session
+  -- Expect:
+    --- Delete session on client side
+    --- Show Warning that last session expired so User must restart (login!)
+  -- Don't Expect:
+    --- Errors
+    --- User/game info
+
+- cookie + matching server side session
+  -- Expect:
+    --- Show User and game info in leftVue
+    --- Show "Rejoin the fleet" with link to Account.CurrentGameID
+  -- Don't Expect:
+    --- Errors/Warnings
+    --- "Join the Fleet" button with no username
+
+Logged-in User Scenarios:
+- No battlefleetID cookie
+- cookie + no matching server side session
+- cookie + matching server side session

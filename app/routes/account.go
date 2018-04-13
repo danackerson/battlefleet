@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"html/template"
 	"net/http"
 	"strings"
@@ -65,27 +64,22 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getAccount(r *http.Request, session *sessions.Session) *structures.Account {
+func getAccount(session *sessions.Session, cmdrName string) *structures.Account {
 	var account *structures.Account
 
-	decoder := json.NewDecoder(r.Body)
-
-	var cmdrName struct {
-		CmdrName string
-	}
-	err := decoder.Decode(&cmdrName)
-
+	/*requestDump, err := httputil.DumpRequest(r, true)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
+	fmt.Println(string(requestDump))*/
 
 	if session.Values[app.AccountKey] == nil {
-		if r.FormValue("cmdrName") == "" || r.FormValue("cmdrName") == app.DefaultCmdrName {
+		if cmdrName == "" || cmdrName == app.DefaultCmdrName {
 			// new accounts require a CommanderName and 'stranger!' is reserved ;)
 			return nil
 		}
 
-		account = structures.NewAccount(r.FormValue("cmdrName"))
+		account = structures.NewAccount(cmdrName)
 		session.Values[app.AccountKey] = account
 	} else {
 		account = session.Values[app.AccountKey].(*structures.Account)

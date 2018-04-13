@@ -1,13 +1,12 @@
 package routes
 
 import (
-	"fmt"
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
@@ -38,20 +37,40 @@ const errorPage = `
 		{{ . }}<br/><br/>
 `
 
-func dumpRequest(req *http.Request) {
-	var request []string
-	// Add the request string
-	url := fmt.Sprintf("%v %v %v", req.Method, req.URL, req.Proto)
-	request = append(request, url)
-	request = append(request, fmt.Sprintf("Host: %v", req.Host))
-	// Loop through headers
-	for name, headers := range req.Header {
-		name = strings.ToLower(name)
-		for _, h := range headers {
-			request = append(request, fmt.Sprintf("%v: %v", name, h))
-		}
+// ErrorType is a JSON obj for error msgs sent to browser
+type errorType struct {
+	HTTPCode int
+	Error    string
+}
+
+// AccountType is a JSON obj for minimal Account info sent to browser
+type accountType struct {
+	ID        string
+	Commander string
+}
+
+// GameType is a JSON obj for minimal Game info sent to browser
+type gameType struct {
+	ID       string
+	Account  accountType
+	Version  *Version
+	GridSize float64
+}
+
+func setupCORSOptions(w http.ResponseWriter) {
+	if !app.ProdSession {
+		w.Header().Add("Access-Control-Allow-Origin", "http://localhost:8443")
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+		w.Header().Add("Access-Control-Allow-Methods", "POST, GET")
+		w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
 	}
-	log.Printf("Host: %s", request)
+}
+
+func sendError(w http.ResponseWriter, httpCode int, errorMsg string) {
+	var errorJSON errorType
+	errorJSON.HTTPCode = 401
+	errorJSON.Error = errorMsg
+	json.NewEncoder(w).Encode(errorJSON)
 }
 
 // RetrieveSession fetches existing session store, or, if unavailable, recreates

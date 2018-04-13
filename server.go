@@ -20,7 +20,7 @@ func main() {
 
 	// Serve static assets directly
 	r.PathPrefix("/wsInit").HandlerFunc(routes.ServeWebSocket)
-	r.PathPrefix("/post").HandlerFunc(routes.GameHandler).Methods("POST")
+	r.PathPrefix("/post").HandlerFunc(routes.GameHandler).Methods("POST", "OPTIONS")
 
 	r.PathPrefix("/fonts").Handler(http.FileServer(http.Dir("public")))
 	r.PathPrefix("/css").Handler(http.FileServer(http.Dir("public")))

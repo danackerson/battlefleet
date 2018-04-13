@@ -126,7 +126,7 @@ func retrieveGame(ws *websocket.Conn, w http.ResponseWriter, r *http.Request) {
 				continue // skip rest and block on ws.ReadMessage() above
 			}
 
-			account := getAccount(r, session)
+			account := getAccount(session, "UNKNOWN")
 			if account != nil {
 				game := account.GetGame()
 
