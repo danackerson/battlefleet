@@ -1,13 +1,11 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import cookies from 'vue-cookies'
 import auth from 'src/battlefleet/auth'
 import store from 'src/store'
 import routes from './routes'
 
 Vue.use(auth)
 Vue.use(VueRouter)
-Vue.use(cookies)
 
 const Router = new VueRouter({
   /*
