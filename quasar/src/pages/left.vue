@@ -86,7 +86,8 @@ export default {
   mounted () {
     // only interesting if we already have a BattlefleetID cookie
     // try and auto login/refresh with current game
-    if (this.$cookies.get('battlefleetID') != null) {
+    alert(this.$cookies.get('battlefleetID'))
+    if (this.$cookies.get('battlefleetID')) {
       start(this)
     }
   },
