@@ -68,7 +68,7 @@ func setupCORSOptions(w http.ResponseWriter) {
 
 func sendError(w http.ResponseWriter, httpCode int, errorMsg string) {
 	var errorJSON errorType
-	errorJSON.HTTPCode = 401
+	errorJSON.HTTPCode = httpCode
 	errorJSON.Error = errorMsg
 	json.NewEncoder(w).Encode(errorJSON)
 }

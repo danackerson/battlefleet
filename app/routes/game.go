@@ -71,7 +71,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 
 		json.NewEncoder(w).Encode(gameJSON)
 	} else {
-		sendError(w, 401, "New accounts require a Commander name and '"+app.DefaultCmdrName+"' is not allowed.")
+		sendError(w, 412, "Session no longer exists. Please login or start over.")
 		return
 	}
 }

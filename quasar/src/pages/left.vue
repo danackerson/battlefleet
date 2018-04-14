@@ -37,8 +37,7 @@ var start = function(vueX) {
     }).then(result => {
       vueX.response = JSON.parse(JSON.stringify(result.data))
       if (vueX.response.Error !== undefined) {
-        if (vueX.$cookies.get('battlefleetID') != null &&
-            vueX.response.HTTPCode == '401') {
+        if (vueX.response.HTTPCode == '412') {
           vueX.response.Error = "Your session is no longer on the server. Please login or create a new game."
         }
         vueX.$q.notify({
@@ -84,12 +83,8 @@ export default {
     }
   },
   mounted () {
-    // only interesting if we already have a BattlefleetID cookie
     // try and auto login/refresh with current game
-    alert(this.$cookies.get('battlefleetID'))
-    if (this.$cookies.get('battlefleetID')) {
-      start(this)
-    }
+    start(this)
   },
   methods: {
     accountID () {
