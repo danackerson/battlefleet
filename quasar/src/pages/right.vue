@@ -14,8 +14,8 @@
   </div>
   <div v-else>
     <p>Welcome, stranger!</p>
-    <input type="text" v-model="$store.state.account.CmdrName" placeholder="Anonymous" required/>
-    <button v-if="$store.state.account.CmdrName.length > 2" v-on:click="startGame()">Join the fleet!</button>
+    <input type="text" v-model="input.cmdrName" placeholder="Anonymous" required/>
+    <button v-if="input.cmdrName.length > 2" v-on:click="startGame()">Join the fleet!</button>
     <label v-else>Enter Name</label>
     <br><br>
     Auth0: <button type="text" @click="toggleAuth" v-model="authState">{{ authState }}</button>
@@ -84,7 +84,7 @@ var start = function(vueX) {
           vueX.response.Error = "Your session is no longer on the server. Please login or create a new game."
         }
         vueX.$q.notify({
-          color: 'negative',
+          color: 'warning',
           position: 'top',
           message: vueX.response.Error + ' (' + vueX.response.HTTPCode + ')',
           icon: 'report_problem'
