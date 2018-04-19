@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import example from './module-example'
+import account from './module-account'
 import VueNativeSock from 'vue-native-websocket'
 
 Vue.use(Vuex)
@@ -9,7 +9,7 @@ Vue.use(require('vue-moment')); // date formatting lib
 
 const store = new Vuex.Store({
   modules: {
-    example
+    account
   },
   state: {
     count: 0,

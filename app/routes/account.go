@@ -14,6 +14,24 @@ import (
 
 // AccountHandler for handling account requests
 func AccountHandler(w http.ResponseWriter, r *http.Request) {
+	/*setupCORSOptions(w)
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	var fields map[string]interface{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&fields)
+	log.Printf("FIELDS: %v", fields)
+	if err != nil {
+		sendError(w, 502, "failed to decode fields: "+err.Error())
+		return
+	}*/
+
 	var account *structures.Account
 	session := RetrieveSession(w, r)
 	if session.Values[app.AccountKey] != nil {

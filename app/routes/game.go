@@ -22,8 +22,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	// defined in left.vue => data => input
-	fields := map[string]string{}
+	var fields map[string]string
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&fields)
 	if err != nil {
