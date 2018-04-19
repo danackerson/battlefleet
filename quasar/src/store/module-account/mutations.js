@@ -1,5 +1,11 @@
-/*
-export const setHeader = (state, val) => {
-  state.header = val
+export const setCmdrName = (state, val) => {
+  return state.CmdrName = val
 }
-*/
+
+export const setCurrentGameID = (state, val) => {
+  state.CurrentGameID = val
+}
+
+export const setAccountID = (state, val) => {
+  state.ID = val
+}

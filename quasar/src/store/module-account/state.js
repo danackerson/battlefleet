@@ -1,6 +1,6 @@
 export default {
   ID: '',
-  cmdrName: '',
-  currentGameID: '',
+  CmdrName: '',
+  CurrentGameID: '',
   authState: false
 }

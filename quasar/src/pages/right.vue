@@ -1,21 +1,21 @@
 <template>
-  <div v-if="this.$store.state.account.cmdrName">
-    <p >Welcome, {{ this.$store.state.account.cmdrName }} <img v-if="this.$auth.isAuthenticated()" height="16px" :src="this.$auth.user.picture">!</p>
+  <div v-if="$store.state.account.CmdrName">
+    <p >Welcome, {{ $store.state.account.CmdrName }} <img v-if="$auth.isAuthenticated()" height="16px" :src="$auth.user.picture">!</p>
     <br>
     <textarea v-model="JSON.stringify(response)"/>
     <br>
-    <div v-show="this.$store.state.account.currentGameID != ''">
-    <p>Game ID: {{ this.$store.state.account.currentGameID }}</p>
-    <p><a :href="`/account/${this.$store.state.account.ID}`">Commander: {{ this.$store.state.account.cmdrName }}</a></p>
-    <!--<p><a :href="versionURL()">{{ versionTag() }}</a></p>-->
+    <div v-show="$store.state.account.CurrentGameID">
+    <p>Game ID: {{ $store.state.account.CurrentGameID }}</p>
+    <p><a :href="`/account/${$store.state.account.ID}`">Commander: {{ $store.state.account.CmdrName }}</a></p>
+    <!-- <p><a :href="versionURL()">{{ versionTag() }}</a></p> -->
     </div>
     Auth0: <button type="text" @click="toggleAuth" v-model="authState">{{ authState }}</button>
     <br><br>
   </div>
   <div v-else>
     <p>Welcome, stranger!</p>
-    <input type="text" v-model="this.$store.state.account.cmdrName" placeholder="Anonymous" required/>
-    <button v-if="this.$store.state.account.cmdrName.length > 2" v-on:click="startGame()">Join the fleet!</button>
+    <input type="text" v-model="$store.state.account.CmdrName" placeholder="Anonymous" required/>
+    <button v-if="$store.state.account.CmdrName.length > 2" v-on:click="startGame()">Join the fleet!</button>
     <label v-else>Enter Name</label>
     <br><br>
     Auth0: <button type="text" @click="toggleAuth" v-model="authState">{{ authState }}</button>
@@ -52,7 +52,7 @@ var login = function(vueX) {
           vueX.response.Error = "Your session is no longer on the server. Please login or create a new game."
         }
         vueX.$q.notify({
-          color: 'negative',
+          color: 'warning-l',
           position: 'top',
           message: vueX.response.Error + ' (' + vueX.response.HTTPCode + ')',
           icon: 'report_problem'
@@ -91,9 +91,9 @@ var start = function(vueX) {
         })
       } else if (result.data.ID !== undefined) {
         //vueX.gameInfo = vueX.response
-        vueX.$store.state.account.currentGameID = result.data.ID
-        vueX.$store.state.account.cmdrName = result.data.Account.Commander
-        vueX.$store.state.account.ID = result.data.Account.ID
+        vueX.$store.commit('account/setCurrentGameID', result.data.ID)
+        vueX.$store.commit('account/setCmdrName', result.data.Account.Commander)
+        vueX.$store.commit('account/setAccountID', result.data.Account.ID)
       }
     }).catch(e => vueX.$q.notify({
       color: 'negative',
