@@ -57,7 +57,7 @@
         </q-btn>
 
         <q-toolbar-title>
-          Footer
+          <div id="version" slot="subtitle"><a :href="$store.state.versionURL">v{{ $store.state.versionID }}</a></div>
         </q-toolbar-title>
 
         <q-btn

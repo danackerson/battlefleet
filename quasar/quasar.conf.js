@@ -13,7 +13,7 @@ module.exports = function (ctx) {
       'app.styl'
     ],
     extras: [
-      ctx.theme.mat ? 'roboto-font' : null,
+      //ctx.theme.mat ? 'roboto-font' : null,
       'material-icons'
       // 'ionicons',
       // 'mdi',
@@ -60,6 +60,8 @@ module.exports = function (ctx) {
     // framework: 'all' --- includes everything; for dev only!
     framework: {
       components: [
+        'QField',
+        'QInput',
         'QLayout',
         'QLayoutHeader',
         'QLayoutFooter',

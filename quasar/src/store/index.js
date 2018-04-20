@@ -13,6 +13,8 @@ const store = new Vuex.Store({
   },
   state: {
     count: 0,
+    versionID: '',
+    versionURL: '',
     socket: {
       isConnected: false,
       message: 'Space',

@@ -53,7 +53,6 @@ type accountType struct {
 type gameType struct {
 	ID       string
 	Account  accountType
-	Version  *Version
 	GridSize float64
 }
 

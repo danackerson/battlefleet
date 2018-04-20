@@ -24,6 +24,7 @@ func GetVersionInfo() *Version {
 
 // VersionHandler now commented
 func VersionHandler(w http.ResponseWriter, req *http.Request) {
+	setupCORSOptions(w)
 	versionInfo := GetVersionInfo()
 	//dumpRequest(req)
 	v := map[string]string{"version": versionInfo.URL, "build": versionInfo.Tag}

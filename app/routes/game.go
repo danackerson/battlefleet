@@ -66,7 +66,6 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		gameJSON.ID = account.CurrentGameID
 		gameJSON.Account = accountJSON
 		gameJSON.GridSize = structures.GridSize
-		gameJSON.Version = GetVersionInfo()
 
 		json.NewEncoder(w).Encode(gameJSON)
 	} else {
