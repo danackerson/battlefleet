@@ -15,8 +15,13 @@
         </q-btn>
 
         <q-toolbar-title>
-          Battlefleet!
-          <div slot="subtitle">Running on Quasar v{{ $q.version }}</div>
+          <div id="cmdrName" >
+            <span v-if="$store.state.account.CmdrName">Welcome, <a :href="`/account/${$store.state.account.ID}`">{{ $store.state.account.CmdrName }}</a>!</span>
+            <span v-else>Welcome, stranger!</span>
+            <q-btn style="vertical-align:middle" size="sm" color="white" :label="authState" @click="toggleAuth" height="10px" text-color="deep-orange" align="between" dense>
+              &nbsp;<img align="center" height="16px" src="//cdn2.auth0.com/styleguide/latest/lib/logos/img/badge.png">
+            </q-btn>
+          </div>
         </q-toolbar-title>
 
         <q-btn
@@ -57,6 +62,8 @@
         </q-btn>
 
         <q-toolbar-title>
+          <div id="prodName">Battlefleet</div>
+          <!--<div style="float:left;">Quasar v{{ $q.version }}</div>-->
           <div id="version" slot="subtitle"><a :href="$store.state.versionURL">v{{ $store.state.versionID }}</a></div>
         </q-toolbar-title>
 
@@ -78,9 +85,23 @@ export default {
       leftDrawerOpen: this.$q.platform.is.desktop,
       rightDrawerOpen: this.$q.platform.is.desktop
     }
+  },
+  computed: {
+    authState() {
+      return this.$auth.isAuthenticated() ? 'Logout' : (this.$store.state.account.ID ? 'Save' : 'Login')
+    }
+  },
+  methods: {
+    toggleAuth() {
+      if (this.$auth.isAuthenticated()) {
+        this.$auth.logout()
+        this.authState = 'Login'
+        this.$store.state.count++
+      } else {
+        this.$auth.login()
+        start(this)
+      }
+    }
   }
 }
 </script>
-
-<style>
-</style>

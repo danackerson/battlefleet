@@ -1,8 +1,8 @@
 {
   "name": "battlefleet",
   "version": "1.0.0",
-  "description": "Rejoin the fleet!",
-  "productName": "Battlefleet",
+  "description": "Rejoin the fleet",
+  "productName": "Battlefleet!",
   "cordovaId": "org.cordova.quasar.app",
   "author": "Dan Ackerson <dan@ackerson.de>",
   "private": true,

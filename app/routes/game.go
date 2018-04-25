@@ -30,6 +30,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sessionOrig, _ := app.SessionStore.Get(r, app.SessionCookieKey)
 	session := RetrieveSession(w, r)
 	account := getAccount(session, fields["cmdrName"])
 	if account != nil {
@@ -68,7 +69,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		gameJSON.GridSize = structures.GridSize
 
 		json.NewEncoder(w).Encode(gameJSON)
-	} else {
+	} else if sessionOrig.ID == session.ID && session.IsNew {
 		sendError(w, 412, "Session no longer exists. Please login or start over.")
 		return
 	}

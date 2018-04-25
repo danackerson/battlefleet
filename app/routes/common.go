@@ -43,6 +43,11 @@ type errorType struct {
 	Error    string
 }
 
+type infoType struct {
+	HTTPCode int
+	Message  string
+}
+
 // AccountType is a JSON obj for minimal Account info sent to browser
 type accountType struct {
 	ID        string
@@ -63,6 +68,13 @@ func setupCORSOptions(w http.ResponseWriter) {
 		w.Header().Add("Access-Control-Allow-Methods", "POST, GET")
 		w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
 	}
+}
+
+func sendSuccess(w http.ResponseWriter, httpCode int, errorMsg string) {
+	var infoJSON infoType
+	infoJSON.HTTPCode = httpCode
+	infoJSON.Message = errorMsg
+	json.NewEncoder(w).Encode(infoJSON)
 }
 
 func sendError(w http.ResponseWriter, httpCode int, errorMsg string) {

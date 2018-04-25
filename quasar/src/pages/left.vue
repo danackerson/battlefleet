@@ -13,10 +13,6 @@
   </div>
 </template>
 
-<style>
-
-</style>
-
 <script>
 import axios from 'axios'
 
@@ -36,7 +32,7 @@ export default {
   },
   methods: {
     updateTime () {
-        this.$socket.sendObj()
+        this.$socket.sendObj({})
     }
   }
 }

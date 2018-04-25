@@ -1,9 +1,10 @@
 package routes
 
 import (
+	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
-	"strings"
 
 	"github.com/danackerson/battlefleet/app"
 	"github.com/danackerson/battlefleet/app/structures"
@@ -14,7 +15,7 @@ import (
 
 // AccountHandler for handling account requests
 func AccountHandler(w http.ResponseWriter, r *http.Request) {
-	/*setupCORSOptions(w)
+	setupCORSOptions(w)
 
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -26,59 +27,49 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 	var fields map[string]interface{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&fields)
-	log.Printf("FIELDS: %v", fields)
+	log.Printf("FIELDS: %v %s", fields, fields["CmdrName"])
 	if err != nil {
 		sendError(w, 502, "failed to decode fields: "+err.Error())
 		return
-	}*/
+	}
 
 	var account *structures.Account
 	session := RetrieveSession(w, r)
 	if session.Values[app.AccountKey] != nil {
 		account = session.Values[app.AccountKey].(*structures.Account)
 
-		requestParams := r.URL.Query()
-		if len(requestParams) > 0 {
-			if requestParams["action"][0] == "delete" {
-				account.DeleteAccount(app.DB)
-				session.Options.MaxAge = -1
-				if e := session.Save(r, w); e != nil {
-					t, _ := template.New("errorPage").Parse(errorPage)
-					t.Execute(w, "saveSession1: "+e.Error())
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
-					return
-				}
-				// Session Flash msg "Account deleted"
-				http.Redirect(w, r, "/?account=deleted", http.StatusTemporaryRedirect)
+		switch r.URL.Path {
+		case "/login":
+			// todo
+		case "/logout":
+			account.EndSession(app.DB)
+			session.Options.MaxAge = -1
+			if e := session.Save(r, w); e != nil {
+				sendError(w, 502, e.Error())
 				return
-			} else if requestParams["action"][0] == "logout" {
-				account.EndSession(app.DB)
-				session.Options.MaxAge = -1
-				if e := session.Save(r, w); e != nil {
-					t, _ := template.New("errorPage").Parse(errorPage)
-					t.Execute(w, "saveSession2: "+e.Error())
-					http.Redirect(w, r, "/", http.StatusInternalServerError)
-					return
-				}
-
-				returnHost := strings.Replace(r.Host, ":", "%3A", 1)
-				returnTo := "?returnTo=" + app.URIScheme + "%3A%2F%2F" + returnHost + "&client_id=" + app.AuthZeroData.Auth0ClientID
-				http.Redirect(w, r, "https://battlefleet.eu.auth0.com/v2/logout"+returnTo, http.StatusTemporaryRedirect)
+			} else {
+				// send redirect back to VueJS (Auth0 logout)
+			}
+		case "/updateAccount":
+			account.Commander = fields["CmdrName"].(string)
+			if e := session.Save(r, w); e != nil {
+				sendError(w, 502, e.Error())
+				return
+			} else {
+				sendSuccess(w, 200, "Successfully updated account")
 				return
 			}
-
+			// TODO: send successful update msg back!
+		case "/deleteAccount":
+			account.DeleteAccount(app.DB)
+			session.Options.MaxAge = -1
+			if e := session.Save(r, w); e != nil {
+				t, _ := template.New("errorPage").Parse(errorPage)
+				t.Execute(w, "saveSession1: "+e.Error())
+				http.Redirect(w, r, "/", http.StatusInternalServerError)
+				return
+			}
 		}
-
-		renderer.HTML(w, http.StatusOK, "account",
-			map[string]interface{}{
-				"Account": account, "AuthData": app.AuthZeroData,
-				"DevEnv": !app.ProdSession, "Version": GetVersionInfo(),
-			})
-	} else {
-		t, _ := template.New("errorPage").Parse(errorPage)
-		t.Execute(w, "You are currently not logged in!")
-		http.Redirect(w, r, "/", http.StatusInternalServerError)
-		return
 	}
 }
 

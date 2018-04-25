@@ -21,6 +21,7 @@ func main() {
 	// Serve static assets directly
 	r.PathPrefix("/wsInit").HandlerFunc(routes.ServeWebSocket)
 	r.PathPrefix("/login").HandlerFunc(routes.AccountHandler).Methods("POST", "OPTIONS")
+	r.PathPrefix("/updateAccount").HandlerFunc(routes.AccountHandler).Methods("POST", "OPTIONS")
 	r.PathPrefix("/version").HandlerFunc(routes.VersionHandler).Methods("POST", "OPTIONS")
 	r.PathPrefix("/newGame").HandlerFunc(routes.GameHandler).Methods("POST", "OPTIONS")
 
