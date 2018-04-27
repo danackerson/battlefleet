@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex flex-center">
-    <div style="line-height:18px;" v-if="!$store.state.account.CmdrName">
+    <div style="position:absolute;top:50px;line-height:18px;" v-if="!$store.state.account.CmdrName">
       <q-field dark helper="Enter your commander's name">
         <q-input
           type="text"
@@ -31,36 +31,6 @@
 
 <script>
 import axios from 'axios'
-
-var login = function(parent) {
-  return axios({
-    method: 'POST',
-    'url': parent.$store.state.serverURL + '/login',
-    'data': { input: parent.input, user: parent.$auth.user.sub },
-    'headers': {
-      'content-type': 'application/json'
-      }
-    }).then(result => {
-      parent.response = JSON.parse(JSON.stringify(result.data))
-      parent.$store.state.count++
-      if (parent.response.Error !== undefined) {
-        if (parent.response.HTTPCode == '412') {
-          parent.response.Error = "Your session is no longer on the server. Please login or create a new game."
-        }
-        parent.$q.notify({
-          color: 'warning-l',
-          position: 'top',
-          message: parent.response.Error + ' (' + parent.response.HTTPCode + ')',
-          icon: 'report_problem'
-        })
-      }
-    }).catch(e => parent.$q.notify({
-      color: 'negative',
-      position: 'top',
-      message: 'Loading failed: ' + e,
-      icon: 'report_problem'
-    }))
-}
 
 var start = function(parent) {
   return axios({

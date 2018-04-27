@@ -18,7 +18,7 @@
           <div id="cmdrName" >
             <span v-if="$store.state.account.CmdrName">Welcome, <a :href="`/account/${$store.state.account.ID}`">{{ $store.state.account.CmdrName }}</a>!</span>
             <span v-else>Welcome, stranger!</span>
-            <q-btn style="vertical-align:middle" size="sm" color="white" :label="authState" @click="toggleAuth" height="10px" text-color="deep-orange" align="between" dense>
+            <q-btn style="vertical-align:middle" size="sm" color="white" :label="loggedIn" @click="toggleAuth" height="10px" text-color="deep-orange" align="between" dense>
               &nbsp;<img align="center" height="16px" src="//cdn2.auth0.com/styleguide/latest/lib/logos/img/badge.png">
             </q-btn>
           </div>
@@ -78,28 +78,69 @@
 </template>
 
 <script>
+import axios from 'axios'
+
+var login = function(parent) {
+  return axios({
+    method: 'POST',
+    'url': parent.$store.state.serverURL + '/login',
+    'data': { input: parent.input, user: parent.$auth.user.sub },
+    'headers': {
+      'content-type': 'application/json'
+      }
+    }).then(result => {
+      parent.response = JSON.parse(JSON.stringify(result.data))
+      parent.$store.state.count++
+      if (parent.response.Error !== undefined) {
+        if (parent.response.HTTPCode == '412') {
+          parent.response.Error = "Your session is no longer on the server. Please login or create a new game."
+        }
+        parent.$q.notify({
+          color: 'warning-l',
+          position: 'top',
+          message: parent.response.Error + ' (' + parent.response.HTTPCode + ')',
+          icon: 'report_problem'
+        })
+      }
+    }).catch(e => parent.$q.notify({
+      color: 'negative',
+      position: 'top',
+      message: 'Loading failed: ' + e,
+      icon: 'report_problem'
+    }))
+}
+
 export default {
   name: 'LayoutDefault',
   data () {
     return {
+      loggedIn: 'Login',
       leftDrawerOpen: this.$q.platform.is.desktop,
       rightDrawerOpen: this.$q.platform.is.desktop
     }
   },
   computed: {
     authState() {
-      return this.$auth.isAuthenticated() ? 'Logout' : (this.$store.state.account.ID ? 'Save' : 'Login')
+      if (this.$auth.isAuthenticated()) {
+        this.loggedIn = this.$auth.isAuthenticated()
+      } else if (this.$store.state.account.ID) {
+        this.loggedIn = 'Save'
+      } else {
+        this.loggedIn = 'Login'
+      }
     }
   },
   methods: {
     toggleAuth() {
       if (this.$auth.isAuthenticated()) {
         this.$auth.logout()
-        this.authState = 'Login'
         this.$store.state.count++
+        this.loggedIn = this.$store.state.account.ID ? 'Save' : 'Login'
+        //login(this)
       } else {
         this.$auth.login()
-        start(this)
+        this.loggedIn = 'Logout'
+        login(this)
       }
     }
   }
