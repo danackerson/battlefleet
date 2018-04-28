@@ -9,3 +9,7 @@ export const getAccountID = (state) => {
 export const getCurrentGameID = (state) => {
   return state.CurrentGameID
 }
+
+export const getAuth0 = (state) => {
+  return state.Auth0
+}

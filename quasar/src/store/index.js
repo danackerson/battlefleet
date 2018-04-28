@@ -22,6 +22,11 @@ const store = new Vuex.Store({
     },
     serverURL: location.protocol + "//" + location.hostname + ':' + process.env.PORT
   },
+  getters: {
+    getLoggedIn: state => {
+      return state.account.Auth0 ? 'Logout' : (state.account.ID ? 'Save' : 'Login')
+    }
+  },
   actions: {
     currentServerTime (context, content) {
       console.log('RCVD currentServerTime: ' + JSON.stringify(content))
@@ -35,6 +40,9 @@ const store = new Vuex.Store({
     }
   },
   mutations:{
+    reinitState (state, event) {
+      resetState()
+    },
     SOCKET_ONOPEN (state, event)  {
       state.socket.isConnected = true
       console.log('WS Connected')
@@ -76,3 +84,9 @@ Vue.use(VueNativeSock, websocketURL + '/wsInit', {
 })
 
 export default store
+
+const initialStateCopy = JSON.parse(JSON.stringify(store.state))
+
+export function resetState() {
+  store.replaceState(JSON.parse(JSON.stringify(initialStateCopy)))
+}

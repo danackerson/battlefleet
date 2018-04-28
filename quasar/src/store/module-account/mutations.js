@@ -1,5 +1,5 @@
 export const setCmdrName = (state, val) => {
-  return state.CmdrName = val
+  state.CmdrName = val
 }
 
 export const setCurrentGameID = (state, val) => {
@@ -8,4 +8,8 @@ export const setCurrentGameID = (state, val) => {
 
 export const setAccountID = (state, val) => {
   state.ID = val
+}
+
+export const setAuth0Login = (state, val) => {
+  state.Auth0 = val
 }

@@ -114,33 +114,24 @@ export default {
   name: 'LayoutDefault',
   data () {
     return {
-      loggedIn: 'Login',
       leftDrawerOpen: this.$q.platform.is.desktop,
       rightDrawerOpen: this.$q.platform.is.desktop
     }
   },
   computed: {
-    authState() {
-      if (this.$auth.isAuthenticated()) {
-        this.loggedIn = this.$auth.isAuthenticated()
-      } else if (this.$store.state.account.ID) {
-        this.loggedIn = 'Save'
-      } else {
-        this.loggedIn = 'Login'
-      }
+    loggedIn() {
+      return this.$store.getters.getLoggedIn
     }
   },
   methods: {
     toggleAuth() {
       if (this.$auth.isAuthenticated()) {
         this.$auth.logout()
+        this.$store.commit('reinitState')
+        //this.$store.state.account.Auth0 = ''
         this.$store.state.count++
-        this.loggedIn = this.$store.state.account.ID ? 'Save' : 'Login'
-        //login(this)
       } else {
         this.$auth.login()
-        this.loggedIn = 'Logout'
-        login(this)
       }
     }
   }
