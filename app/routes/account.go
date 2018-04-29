@@ -47,19 +47,18 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 			if e := session.Save(r, w); e != nil {
 				sendError(w, 502, e.Error())
 				return
-			} else {
-				// send redirect back to VueJS (Auth0 logout)
 			}
+
+			sendSuccess(w, 200, "Thanks for playing")
+			return
 		case "/updateAccount":
 			account.Commander = fields["CmdrName"].(string)
 			if e := session.Save(r, w); e != nil {
 				sendError(w, 502, e.Error())
 				return
-			} else {
-				sendSuccess(w, 200, "Successfully updated account")
-				return
 			}
-			// TODO: send successful update msg back!
+			sendSuccess(w, 200, "Successfully updated account")
+			return
 		case "/deleteAccount":
 			account.DeleteAccount(app.DB)
 			session.Options.MaxAge = -1

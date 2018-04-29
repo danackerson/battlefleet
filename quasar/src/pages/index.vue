@@ -1,11 +1,12 @@
 <template>
   <q-page class="flex flex-center">
     <div style="position:absolute;top:50px;line-height:18px;" v-if="!$store.state.account.CmdrName">
-      <q-field dark helper="Enter your commander's name">
+      <q-field dark helper="">
         <q-input
           type="text"
           color="white"
           v-model="input.cmdrName"
+          float-label="Enter your commander's name"
         >
           <q-btn
             icon-right="send"

@@ -16,7 +16,7 @@
 
         <q-toolbar-title>
           <div id="cmdrName" >
-            <span v-if="$store.state.account.CmdrName">Welcome, <a :href="`/account/${$store.state.account.ID}`">{{ $store.state.account.CmdrName }}</a>!</span>
+            <span v-if="$store.state.account.CmdrName">Welcome, <a :href="`/account/${$store.state.account.ID}`">{{ $store.getters['account/getCmdrName'] }}</a>!</span>
             <span v-else>Welcome, stranger!</span>
             <q-btn style="vertical-align:middle" size="sm" color="white" :label="loggedIn" @click="toggleAuth" height="10px" text-color="deep-orange" align="between" dense>
               &nbsp;<img align="center" height="16px" src="//cdn2.auth0.com/styleguide/latest/lib/logos/img/badge.png">
@@ -80,6 +80,43 @@
 <script>
 import axios from 'axios'
 
+var logout = function(parent) {
+  return axios({
+    method: 'POST',
+    'url': parent.$store.state.serverURL + '/logout',
+    'data': { user: parent.$auth.user.sub },
+    'headers': {
+      'content-type': 'application/json'
+      }
+    }).then(result => {
+      parent.response = JSON.parse(JSON.stringify(result.data))
+      parent.$store.state.count++
+      if (parent.response.Error !== undefined) {
+        if (parent.response.HTTPCode == '412') {
+          parent.response.Error = "Your session is no longer on the server. Please login or create a new game."
+        }
+        parent.$q.notify({
+          color: 'warning-l',
+          position: 'top',
+          message: parent.response.Error + ' (' + parent.response.HTTPCode + ')',
+          icon: 'report_problem'
+        })
+      } else if (parent.response.Message !== undefined) {
+        parent.$q.notify({
+          color: 'positive',
+          position: 'top',
+          message: parent.response.Message,
+          icon: 'done'
+        })
+      }
+    }).catch(e => parent.$q.notify({
+      color: 'negative',
+      position: 'top',
+      message: 'Loading failed: ' + e,
+      icon: 'report_problem'
+    }))
+}
+
 var login = function(parent) {
   return axios({
     method: 'POST',
@@ -127,8 +164,8 @@ export default {
     toggleAuth() {
       if (this.$auth.isAuthenticated()) {
         this.$auth.logout()
+        logout(this)
         this.$store.commit('reinitState')
-        //this.$store.state.account.Auth0 = ''
         this.$store.state.count++
       } else {
         this.$auth.login()

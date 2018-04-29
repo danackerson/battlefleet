@@ -21,9 +21,12 @@ func main() {
 	// Serve static assets directly
 	r.PathPrefix("/wsInit").HandlerFunc(routes.ServeWebSocket)
 	r.PathPrefix("/login").HandlerFunc(routes.AccountHandler).Methods("POST", "OPTIONS")
+	r.PathPrefix("/logout").HandlerFunc(routes.AccountHandler).Methods("POST", "OPTIONS")
 	r.PathPrefix("/updateAccount").HandlerFunc(routes.AccountHandler).Methods("POST", "OPTIONS")
-	r.PathPrefix("/version").HandlerFunc(routes.VersionHandler).Methods("POST", "OPTIONS")
+
 	r.PathPrefix("/newGame").HandlerFunc(routes.GameHandler).Methods("POST", "OPTIONS")
+
+	r.PathPrefix("/version").HandlerFunc(routes.VersionHandler).Methods("POST", "OPTIONS")
 
 	r.PathPrefix("/fonts").Handler(http.FileServer(http.Dir("public")))
 	r.PathPrefix("/css").Handler(http.FileServer(http.Dir("public")))
@@ -34,9 +37,8 @@ func main() {
 	r.PathPrefix("/").HandlerFunc(IndexHandler("public/index.html"))
 
 	srv := &http.Server{
-		Handler: handlers.LoggingHandler(os.Stdout, r),
-		Addr:    app.HTTPPort,
-		// Good practice: enforce timeouts for servers you create!
+		Handler:      handlers.LoggingHandler(os.Stdout, r),
+		Addr:         app.HTTPPort,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
@@ -44,6 +46,7 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 }
 
+// IndexHandler serves up the index.template.html which bootstraps the VueJS
 func IndexHandler(entrypoint string) func(w http.ResponseWriter, r *http.Request) {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, entrypoint)

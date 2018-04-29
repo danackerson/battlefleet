@@ -1,4 +1,3 @@
-/*
-export const someAction = (state) => {
+export const getAccount = (state) => {
+  return state
 }
-*/

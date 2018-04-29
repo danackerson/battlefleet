@@ -5,15 +5,16 @@
       Games (=> view, manage, incl delete & highlight current)
       https://material.io/icons/
     -->
-    <q-list>
+    <q-list v-if="$store.state.account.ID">
       <q-collapsible label="Account" opened group="accountMgmt" icon="face">
         <q-field dark label="Commander">
           <q-input
             type="text"
             color="white"
-            v-model="$store.state.account.CmdrName"
+            v-model="name"
+            :float-label="getAccountCmdrName"
           >
-            <q-btn
+            <q-btn v-if="name != getAccountCmdrName && name.length >= 2"
               icon-right="done"
               size="sm"
               @click="updateName"
@@ -40,6 +41,7 @@
 
 <script>
 import axios from 'axios'
+import { mapGetters, mapMutations } from 'vuex'
 
 var updateAccount = function(parent) {
   return axios({
@@ -79,10 +81,31 @@ var updateAccount = function(parent) {
 
 export default {
   name: 'RightPanel',
-  methods: {
-    updateName() {
-      updateAccount(this)
+  data () {
+    return {
+      name: this.getAccountCmdrName
     }
+  },
+  methods: {
+    updateName () {
+      if (this.name.length >= 2) {
+        this.$store.commit('account/setCmdrName', this.name)
+        updateAccount(this)
+      } else {
+        this.$q.notify('Commander name must be at least 2 characters.')
+      }
+    }
+  },
+  computed: {
+    ...mapGetters({
+        getAccountCmdrName: 'account/getCmdrName',
+    })
+  },
+  mounted() {
+    /*this.$store.dispatch('account/getAccount').then(response => {
+      alert(JSON.stringify(response, null, '\t'))
+      this.name = this.getAccountCmdrName
+    })*/
   }
 }
 </script>
