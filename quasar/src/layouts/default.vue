@@ -19,7 +19,7 @@
             <span v-if="$store.state.account.CmdrName">Welcome, <a :href="`/account/${$store.state.account.ID}`">{{ $store.getters['account/getCmdrName'] }}</a>!</span>
             <span v-else>Welcome, stranger!</span>
             <q-btn style="vertical-align:middle" size="sm" color="white" :label="loggedIn" @click="toggleAuth" height="10px" text-color="deep-orange" align="between" dense>
-              &nbsp;<img align="center" height="16px" src="//cdn2.auth0.com/styleguide/latest/lib/logos/img/badge.png">
+              &nbsp;&nbsp;<img align="center" height="16px" src="//cdn2.auth0.com/styleguide/latest/lib/logos/img/badge.png">
             </q-btn>
           </div>
         </q-toolbar-title>

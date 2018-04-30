@@ -1,12 +1,11 @@
 <template>
   <q-page class="flex flex-center">
     <div style="position:absolute;top:50px;line-height:18px;" v-if="!$store.state.account.CmdrName">
-      <q-field dark helper="">
+      <q-field dark helper="Enter your commander's name">
         <q-input
           type="text"
-          color="white"
+          color="yellow"
           v-model="input.cmdrName"
-          float-label="Enter your commander's name"
         >
           <q-btn
             icon-right="send"
@@ -33,7 +32,17 @@
 <script>
 import axios from 'axios'
 
-var start = function(parent) {
+var start = function(parent, clicked) {
+  if (clicked && (!parent.input.cmdrName || parent.input.cmdrName.length < 2)) {
+    parent.$q.notify({
+      color: 'negative',
+      position: 'top',
+      message: 'Name must be at least 2 characters long',
+      icon: 'report_problem'
+    })
+    return
+  }
+
   return axios({
     method: 'POST',
     'url': parent.$store.state.serverURL + '/newGame',
@@ -98,12 +107,12 @@ export default {
     }
   },
   mounted () {
-    start(this)
+    start(this, false)
     version(this)
   },
   methods: {
     startGame () {
-      start(this)
+      start(this, true)
     }
   }
 }

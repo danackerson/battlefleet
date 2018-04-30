@@ -10,18 +10,20 @@
         <q-field dark label="Commander">
           <q-input
             type="text"
-            color="white"
+            color="yellow"
             v-model="name"
-            :float-label="getAccountCmdrName"
-          >
-            <q-btn v-if="name != getAccountCmdrName && name.length >= 2"
-              icon-right="done"
-              size="sm"
-              @click="updateName"
-              text-color="deep-orange"
-              dense
-            />
-          </q-input>
+            :placeholder="getAccountCmdrName"
+            :after="[
+              {
+                icon: 'done',
+                content: !name || name.length >= 2 && name != getAccountCmdrName,
+                handler () {
+                  updateName()
+                },
+                size:'sm'
+              }
+            ]"
+          />
         </q-field>
         <div>
           Auth0 Account?
@@ -83,7 +85,7 @@ export default {
   name: 'RightPanel',
   data () {
     return {
-      name: this.getAccountCmdrName
+      name: null
     }
   },
   methods: {
