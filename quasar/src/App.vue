@@ -23,6 +23,11 @@ export default {
       document.body.scrollTop = 0
       done()
     }
+  },
+  created(){
+    /*if (this.$auth.user) {
+      this.$store.state.account.Auth0 = this.$auth.user.sub
+    }*/
   }
 }
 </script>
