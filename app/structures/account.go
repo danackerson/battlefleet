@@ -88,12 +88,12 @@ func removeAccountFromActiveSessions(account Account) {
 }
 
 // FindAccountByAuth0ProfileSubToken in mongoDB
-func FindAccountByAuth0ProfileSubToken(db *mgo.Session, token string) Account {
+func FindAccountByAuth0ProfileSubToken(db *mgo.Session, token string) *Account {
 	mongoSession := db.Copy()
 	defer mongoSession.Close()
 	c := mongoSession.DB("fleetbattle").C("sessions")
 
-	account := Account{}
+	account := &Account{}
 	err := c.Find(bson.M{"auth0profile.sub": token}).One(&account)
 	if err != nil {
 		panic(err)

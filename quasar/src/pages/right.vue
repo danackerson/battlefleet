@@ -25,9 +25,14 @@
             ]"
           />
         </q-field>
-        <div>
-          Auth0 Account?
-        </div>
+        <q-field dark label="Auth0 Name" v-if="getAccountAuth0">
+          <q-input
+            type="text"
+            color="white"
+            readonly="true"
+            :placeholder="this.$auth.user.name"
+          />
+        </q-field>
       </q-collapsible>
       <q-collapsible label="Games" group="accountMgmt" icon="games">
         <div>
@@ -101,6 +106,7 @@ export default {
   computed: {
     ...mapGetters({
         getAccountCmdrName: 'account/getCmdrName',
+        getAccountAuth0: 'account/getAuth0',
     })
   },
   mounted() {

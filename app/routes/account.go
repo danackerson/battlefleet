@@ -27,7 +27,6 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 	var fields map[string]interface{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&fields)
-	log.Printf("FIELDS: %v %s", fields, fields["CmdrName"])
 	if err != nil {
 		sendError(w, 502, "failed to decode fields: "+err.Error())
 		return
@@ -39,8 +38,6 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 		account = session.Values[app.AccountKey].(*structures.Account)
 
 		switch r.URL.Path {
-		case "/login":
-			// todo
 		case "/logout":
 			account.EndSession(app.DB)
 			session.Options.MaxAge = -1
@@ -69,7 +66,31 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+	} else if r.URL.Path == "/login" {
+		log.Printf("LOOKing for account by Auth0 ID: %s\n", fields["Auth0Token"].(string))
+		account = getAccountByAuth0(fields["Auth0Token"].(string))
+		setupGame(r, w, session, account, account.GetGame().ID)
+		var accountJSON accountType
+		accountJSON.ID = account.ID.Hex()
+		accountJSON.Commander = account.Commander
+
+		var gameJSON gameType
+		gameJSON.ID = account.CurrentGameID
+		gameJSON.Account = accountJSON
+		gameJSON.GridSize = structures.GridSize
+
+		json.NewEncoder(w).Encode(gameJSON)
+		// store account to session and save session
+		// look at game handler how to prep objects for response
+		// send response
+		return
 	}
+}
+
+func getAccountByAuth0(auth0Token string) *structures.Account {
+	var fetchedAccount *structures.Account
+	fetchedAccount = structures.FindAccountByAuth0ProfileSubToken(app.DB, auth0Token)
+	return fetchedAccount
 }
 
 func getAccount(session *sessions.Session, cmdrName string) *structures.Account {
