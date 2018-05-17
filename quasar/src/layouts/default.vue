@@ -121,7 +121,7 @@ var login = function(parent) {
   return axios({
     method: 'POST',
     'url': parent.$store.state.serverURL + '/login',
-    'data': { input: parent.input, user: parent.$auth.user.sub },
+    'data': { "Auth0Token": parent.$auth.user.sub },
     'headers': {
       'content-type': 'application/json'
       }
@@ -138,6 +138,17 @@ var login = function(parent) {
           message: parent.response.Error + ' (' + parent.response.HTTPCode + ')',
           icon: 'report_problem'
         })
+      } else if (result.data.ID !== undefined) {
+         parent.$store.commit('account/setCurrentGameID', result.data.ID)
+         parent.$store.commit('account/setCmdrName', result.data.Account.Commander)
+         parent.$store.commit('account/setAccountID', result.data.Account.ID)
+         parent.$store.commit('account/setAuth0Login', result.data.Account.Auth0)
+         parent.$q.notify({
+           color: 'positive',
+           position: 'top',
+           message: parent.response.Message + result.data.Account.Commander,
+           icon: 'done'
+         })
       }
     }).catch(e => parent.$q.notify({
       color: 'negative',
@@ -157,14 +168,17 @@ export default {
   },
   computed: {
     loggedIn() {
-      return this.$store.getters.getLoggedIn
+      if (this.$auth.isAuthenticated() && this.$store.state.account.ID == "") {
+        login(this)
+      }
+      return this.$auth.isAuthenticated() ? 'Logout' : this.$store.getters.getLoggedIn
     }
   },
   methods: {
     toggleAuth() {
       if (this.$auth.isAuthenticated()) {
-        this.$auth.logout()
         logout(this)
+        this.$auth.logout()
         this.$store.commit('reinitState')
         this.$store.state.count++
       } else {

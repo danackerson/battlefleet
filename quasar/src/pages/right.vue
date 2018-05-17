@@ -29,7 +29,7 @@
           <q-input
             type="text"
             color="white"
-            readonly="true"
+            readonly
             :placeholder="this.$auth.user.name"
           />
         </q-field>
@@ -95,11 +95,13 @@ export default {
   },
   methods: {
     updateName () {
-      if (this.name.length >= 2) {
-        this.$store.commit('account/setCmdrName', this.name)
-        updateAccount(this)
-      } else {
-        this.$q.notify('Commander name must be at least 2 characters.')
+      if (e.keyCode == 13 || e.button == 0) {
+        if (this.name.length >= 2) {
+          this.$store.commit('account/setCmdrName', this.name)
+          updateAccount(this)
+        } else {
+          this.$q.notify('Commander name must be at least 2 characters.')
+        }
       }
     }
   },

@@ -15,7 +15,6 @@ var loginAccount = function(parent) {
       }
     }).then(result => {
       parent.response = JSON.parse(JSON.stringify(result.data))
-      alert(parent.response)
       if (parent.response.Error !== undefined) {
         parent.$q.notify({
           color: 'warning',
@@ -23,7 +22,11 @@ var loginAccount = function(parent) {
           message: parent.response.Error + ' (' + parent.response.HTTPCode + ')',
           icon: 'report_problem'
         })
-      } else if (parent.response.Message !== undefined) {
+      } else if (parent.response.ID !== undefined) {
+        parent.$store.commit('account/setCurrentGameID', result.data.ID)
+        parent.$store.commit('account/setCmdrName', result.data.Account.Commander)
+        parent.$store.commit('account/setAccountID', result.data.Account.ID)
+        //parent.$store.commit('account/setAuth0Login', result.data.Account.Auth0)
         parent.$q.notify({
           color: 'positive',
           position: 'top',

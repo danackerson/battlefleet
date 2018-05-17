@@ -6,6 +6,7 @@
           type="text"
           color="yellow"
           v-model="input.cmdrName"
+          @keyup="startGame"
         >
           <q-btn
             icon-right="send"
@@ -107,12 +108,16 @@ export default {
     }
   },
   mounted () {
-    start(this, false)
+    if (!this.$auth.isAuthenticated() || this.$store.state.account.ID != "") {
+      start(this, false)
+    }
     version(this)
   },
   methods: {
-    startGame () {
-      start(this, true)
+    startGame (e) {
+      if (e.keyCode == 13 || e.button == 0) {
+        start(this, true)
+      }
     }
   }
 }

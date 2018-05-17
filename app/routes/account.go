@@ -73,11 +73,13 @@ func AccountHandler(w http.ResponseWriter, r *http.Request) {
 		var accountJSON accountType
 		accountJSON.ID = account.ID.Hex()
 		accountJSON.Commander = account.Commander
+		accountJSON.Auth0 = account.Auth0Profile["nickname"].(string)
 
 		var gameJSON gameType
 		gameJSON.ID = account.CurrentGameID
 		gameJSON.Account = accountJSON
 		gameJSON.GridSize = structures.GridSize
+		gameJSON.Message = "Welcome back, "
 
 		json.NewEncoder(w).Encode(gameJSON)
 		// store account to session and save session

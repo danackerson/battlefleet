@@ -52,6 +52,7 @@ type infoType struct {
 type accountType struct {
 	ID        string
 	Commander string
+	Auth0     string
 }
 
 // GameType is a JSON obj for minimal Game info sent to browser
@@ -59,6 +60,7 @@ type gameType struct {
 	ID       string
 	Account  accountType
 	GridSize float64
+	Message  string
 }
 
 func setupCORSOptions(w http.ResponseWriter) {
