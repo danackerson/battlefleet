@@ -48,7 +48,7 @@ jobs:
             sed -i -e 's/href=app/href=css\/app/' index.html
             sed -i -e 's/href=\/app/href=\/css\/app/' index.html
             mkdir css
-            mv app*.css css/
+            mv 0.*.css css/
 
             cd ../
             docker build --compress -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
