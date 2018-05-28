@@ -1,10 +1,20 @@
 import Vue from 'vue'
+
 import Vuex from 'vuex'
+Vue.use(Vuex)
 
 import account from './module-account'
 import VueNativeSock from 'vue-native-websocket'
 
-Vue.use(Vuex)
+import helpers from 'src/battlefleet/helpers'
+const plugin = {
+    install () {
+        Vue.helpers = helpers
+        Vue.prototype.$helpers = helpers
+    }
+}
+Vue.use(plugin)
+
 Vue.use(require('vue-moment')); // date formatting lib
 
 const store = new Vuex.Store({

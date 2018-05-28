@@ -5,21 +5,22 @@
       Games (=> view, manage, incl delete & highlight current)
       https://material.io/icons/
     -->
+    <q-input
+      value="getAccountCmdrName"
+    />
     <q-list v-if="$store.state.account.ID">
       <q-collapsible label="Account" opened group="accountMgmt" icon="face">
         <q-field dark label="Commander">
           <q-input
             type="text"
             color="yellow"
-            v-model="name"
+            v-model="commanderName"
             :placeholder="getAccountCmdrName"
             :after="[
               {
                 icon: 'done',
-                content: !name || name.length >= 2 && name != getAccountCmdrName,
-                handler () {
-                  updateName()
-                },
+                content: !commanderName || commanderName.length >= 2 && commanderName != getAccountCmdrName,
+                handler: updateName,
                 size:'sm'
               }
             ]"
@@ -29,8 +30,8 @@
           <q-input
             type="text"
             color="white"
+            :value="this.$auth.user.name"
             readonly
-            :placeholder="this.$auth.user.name"
           />
         </q-field>
       </q-collapsible>
@@ -47,61 +48,28 @@
 </template>
 
 <script>
-import axios from 'axios'
 import { mapGetters, mapMutations } from 'vuex'
-
-var updateAccount = function(parent) {
-  return axios({
-    method: 'POST',
-    'url': parent.$store.state.serverURL + '/updateAccount',
-    'data': parent.$store.state.account,
-    'headers': {
-      'content-type': 'application/json'
-      }
-    }).then(result => {
-      parent.response = JSON.parse(JSON.stringify(result.data))
-      if (parent.response.Error !== undefined) {
-        if (parent.response.HTTPCode == '412') {
-          parent.response.Error = "Your session is no longer on the server. Please login or create a new game."
-        }
-        parent.$q.notify({
-          color: 'warning',
-          position: 'top',
-          message: parent.response.Error + ' (' + parent.response.HTTPCode + ')',
-          icon: 'report_problem'
-        })
-      } else if (parent.response.Message !== undefined) {
-        parent.$q.notify({
-          color: 'positive',
-          position: 'top',
-          message: parent.response.Message,
-          icon: 'done'
-        })
-      }
-    }).catch(e => parent.$q.notify({
-      color: 'negative',
-      position: 'top',
-      message: 'Loading failed: ' + e,
-      icon: 'report_problem'
-    }))
-}
 
 export default {
   name: 'RightPanel',
   data () {
     return {
-      name: null
+      commanderName: null
     }
   },
   methods: {
-    updateName () {
+    updateName(e) {
+      alert(JSON.stringify(e))
       if (e.keyCode == 13 || e.button == 0) {
-        if (this.name.length >= 2) {
-          this.$store.commit('account/setCmdrName', this.name)
-          updateAccount(this)
+        if (this.commanderName.length >= 2) {
+          alert(this.commanderName + " : " + e.keyCode + " | " + e.button)
+          this.$store.commit('account/setCmdrName', this.commanderName)
+          this.$helpers.updateAccount(this)
         } else {
           this.$q.notify('Commander name must be at least 2 characters.')
         }
+      } else {
+        this.$q.notify('Dafuq?!')
       }
     }
   },

@@ -20,10 +20,6 @@ module.exports = function (ctx) {
       // 'fontawesome'
     ],
     supportIE: false,
-    vendor: {
-      add: [],
-      remove: []
-    },
     build: {
       env: ctx.dev ? {
         PORT: 8083, // Websocket & Axios port to Golang server

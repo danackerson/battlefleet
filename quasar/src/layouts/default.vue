@@ -78,86 +78,6 @@
 </template>
 
 <script>
-import axios from 'axios'
-
-var logout = function(parent) {
-  return axios({
-    method: 'POST',
-    'url': parent.$store.state.serverURL + '/logout',
-    'data': { user: parent.$auth.user.sub },
-    'headers': {
-      'content-type': 'application/json'
-      }
-    }).then(result => {
-      parent.response = JSON.parse(JSON.stringify(result.data))
-      parent.$store.state.count++
-      if (parent.response.Error !== undefined) {
-        if (parent.response.HTTPCode == '412') {
-          parent.response.Error = "Your session is no longer on the server. Please login or create a new game."
-        }
-        parent.$q.notify({
-          color: 'warning-l',
-          position: 'top',
-          message: parent.response.Error + ' (' + parent.response.HTTPCode + ')',
-          icon: 'report_problem'
-        })
-      } else if (parent.response.Message !== undefined) {
-        parent.$q.notify({
-          color: 'positive',
-          position: 'top',
-          message: parent.response.Message,
-          icon: 'done'
-        })
-      }
-    }).catch(e => parent.$q.notify({
-      color: 'negative',
-      position: 'top',
-      message: 'Loading failed: ' + e,
-      icon: 'report_problem'
-    }))
-}
-
-var login = function(parent) {
-  return axios({
-    method: 'POST',
-    'url': parent.$store.state.serverURL + '/login',
-    'data': { "Auth0Token": parent.$auth.user.sub },
-    'headers': {
-      'content-type': 'application/json'
-      }
-    }).then(result => {
-      parent.response = JSON.parse(JSON.stringify(result.data))
-      parent.$store.state.count++
-      if (parent.response.Error !== undefined) {
-        if (parent.response.HTTPCode == '412') {
-          parent.response.Error = "Your session is no longer on the server. Please login or create a new game."
-        }
-        parent.$q.notify({
-          color: 'warning-l',
-          position: 'top',
-          message: parent.response.Error + ' (' + parent.response.HTTPCode + ')',
-          icon: 'report_problem'
-        })
-      } else if (result.data.ID !== undefined) {
-         parent.$store.commit('account/setCurrentGameID', result.data.ID)
-         parent.$store.commit('account/setCmdrName', result.data.Account.Commander)
-         parent.$store.commit('account/setAccountID', result.data.Account.ID)
-         parent.$store.commit('account/setAuth0Login', result.data.Account.Auth0)
-         parent.$q.notify({
-           color: 'positive',
-           position: 'top',
-           message: parent.response.Message + result.data.Account.Commander,
-           icon: 'done'
-         })
-      }
-    }).catch(e => parent.$q.notify({
-      color: 'negative',
-      position: 'top',
-      message: 'Loading failed: ' + e,
-      icon: 'report_problem'
-    }))
-}
-
 export default {
   name: 'LayoutDefault',
   data () {
@@ -169,7 +89,7 @@ export default {
   computed: {
     loggedIn() {
       if (this.$auth.isAuthenticated() && this.$store.state.account.ID == "") {
-        login(this)
+        this.$helpers.login(this)
       }
       return this.$auth.isAuthenticated() ? 'Logout' : this.$store.getters.getLoggedIn
     }
@@ -177,7 +97,7 @@ export default {
   methods: {
     toggleAuth() {
       if (this.$auth.isAuthenticated()) {
-        logout(this)
+        this.$helpers.logout(this)
         this.$auth.logout()
         this.$store.commit('reinitState')
         this.$store.state.count++
