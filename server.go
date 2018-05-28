@@ -31,7 +31,7 @@ func main() {
 	r.PathPrefix("/fonts").Handler(http.FileServer(http.Dir("public")))
 	r.PathPrefix("/js").Handler(http.FileServer(http.Dir("public")))
 	r.PathPrefix("/statics").Handler(http.FileServer(http.Dir("public")))
-	r.PathPrefix(`/0.(.*).css`).Handler(http.FileServer(http.Dir("public")))
+	r.PathPrefix(`/{0.(.*).css}`).Handler(http.FileServer(http.Dir("public")))
 
 	// Catch-all: Serve our JavaScript application's entry-point (index.html).
 	r.PathPrefix("/").HandlerFunc(IndexHandler("public/index.html"))
