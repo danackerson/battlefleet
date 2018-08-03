@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: battlefleet-deploy
+  labels:
+    app: battlefleet
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: battlefleet
+    spec:
+      containers:
+      - name: battlefleet
+        image: danackerson/battlefleet:{{CIRCLE_BUILD_NUM}}
+        ports:
+        - containerPort: 8083
+        env:
+        - name: CIRCLE_BUILD_NUM
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: CIRCLE_BUILD_NUM
+        - name: bfSecret
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: bfSecret
+        - name: mongoDBUser
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: mongoDBUser
+        - name: mongoDBPass
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: mongoDBPass
+        - name: mongoDBName
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: mongoDBName
+        - name: mongoDBHost
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: mongoDBHost
+        - name: prodSession
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: prodSession
+        - name: TEMPLATE_DIR
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: TEMPLATE_DIR
+        - name: AUTH0_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: AUTH0_CLIENT_ID
+        - name: AUTH0_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: AUTH0_DOMAIN
+        - name: AUTH0_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: AUTH0_CLIENT_SECRET
+        - name: AUTH0_CALLBACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: battlefleet-env-secrets
+              key: AUTH0_CALLBACK_URL
+      imagePullSecrets:
+      - name: dockerhub-creds
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "battlefleet-deploy-service"
+  namespace: "default"
+  labels:
+    app: "battlefleet"
+spec:
+  ports:
+  - protocol: "TCP"
+    port: 80
+    targetPort: 8083
+  selector:
+    app: "battlefleet"
+  type: "NodePort"

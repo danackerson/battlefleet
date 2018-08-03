@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: golang:1.10-alpine
+      - image: golang:alpine
     working_directory: /go/src/github.com/danackerson/battlefleet
     steps:
       - checkout
@@ -14,7 +14,7 @@ jobs:
             apk add -U jq curl openssh-client build-base git
 
             # https://download.docker.com/linux/static/stable/x86_64/
-            VER="17.12.0"
+            VER="18.06.0"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
 
             rm docker-$VER-ce.tgz && rm -f /var/cache/apk/*
@@ -39,64 +39,64 @@ jobs:
           command: |
             env GOOS=linux GOARCH=386 go build -o server server.go
             docker build --compress -t danackerson/battlefleet:vc$CIRCLE_BUILD_NUM .
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker tag danackerson/battlefleet:vc$CIRCLE_BUILD_NUM danackerson/battlefleet:latest
             docker push danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
+            docker push danackerson/battlefleet:latest
 
-      - add-ssh-keys:
-          fingerprints:
-            - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
+            echo $CIRCLE_BUILD_NUM > last_docker_push
+
+      - persist_to_workspace:
+          root: /go/src/github.com/danackerson/battlefleet
+          paths:
+            - last_docker_push
+
+  docker:
+      - image: google/cloud-sdk:alpine
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp
+
       - run:
-          name: Start ssh-agent
+          name: "deploy container to K8S cluster"
           command: |
-            ssh-agent -s > ~/.ssh_agent_conf
-            source ~/.ssh_agent_conf
-            for _k in $(ls ${HOME}/.ssh/id_*); do
-              ssh-add ${_k} || true
-            done
+            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+            gcloud --quiet components install kubectl
+            gcloud --quiet beta container clusters get-credentials ${GOOGLE_CLUSTER_NAME}
 
-      - run:
-          name: Disable Digital Ocean firewall for deploy
-          command: |
-            curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/disableFW.sh | sh
+            kubectl delete secret battlefleet-env-secrets || true
+            kubectl create secret generic battlefleet-env-secrets \
+              --from-literal=CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM \
+              --from-literal=bfSecret=$bfSecret \
+              --from-literal=mongoDBUser=$mongoDBUser \
+              --from-literal=mongoDBPass=$mongoDBPass \
+              --from-literal=mongoDBName=$mongoDBName \
+              --from-literal=mongoDBHost=$mongoDBHost \
+              --from-literal=prodSession=$prodSession \
+              --from-literal=TEMPLATE_DIR=$TEMPLATE_DIR \
+              --from-literal=AUTH0_CLIENT_ID=$AUTH0_CLIENT_ID \
+              --from-literal=AUTH0_DOMAIN=$AUTH0_DOMAIN \
+              --from-literal=AUTH0_CLIENT_SECRET=$AUTH0_CLIENT_SECRET \
+              --from-literal=AUTH0_CALLBACK_URL=$AUTH0_CALLBACK_URL
 
-      - deploy:
-          name: "deploy container to Digital Ocean Droplet & launch"
-          command: |
-            source ~/.ssh_agent_conf
-            ssh-add -l
-
-            export DEPLOY_SERVER=deploy.ackerson.de
-            if [ $DEPLOY_SERVER_IP ]; then
-              export DEPLOY_SERVER=$DEPLOY_SERVER_IP
+            if [ -f /tmp/last_docker_push ]; then
+              export LAST_DOCKER_PUSH=vc`cat /tmp/last_docker_push`
+            else
+              export LAST_DOCKER_PUSH=latest
             fi
-            echo "Deploy to $DEPLOY_SERVER"
 
-            export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
-            $DEPLOY_CONNECT docker pull danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
-            $DEPLOY_CONNECT docker rm -f battlefleet || true
+            sed -i -e "s@{{CIRCLE_BUILD_NUM}}@$LAST_DOCKER_PUSH@" deploy.yaml
+            kubectl apply -f deploy.yaml
+            kubectl rollout status deployment/battlefleet-deploy
 
-            export DOCKER_RUN="docker run -d --restart=always --network='web' \
-              -e CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM -e bfSecret=$bfSecret \
-              -e mongoDBUser=$mongoDBUser -e mongoDBPass=$mongoDBPass \
-              -e mongoDBName=$mongoDBName -e mongoDBHost=$mongoDBHost \
-              -e prodSession=$prodSession -e TEMPLATE_DIR=$TEMPLATE_DIR \
-              -e AUTH0_CLIENT_ID=$AUTH0_CLIENT_ID -e AUTH0_DOMAIN=$AUTH0_DOMAIN \
-              -e AUTH0_CLIENT_SECRET=$AUTH0_CLIENT_SECRET -e AUTH0_CALLBACK_URL=$AUTH0_CALLBACK_URL \
-              --label='traefik.backend=battlefleet' \
-              --label='traefik.docker.network=web' \
-              --label='traefik.game.frontend.rule=Host:battlefleet.online' \
-              --label='traefik.game.frontend.passHostHeader=true' \
-              --label='traefik.api.frontend.rule=Host:api.battlefleet.online;HeadersRegexp:Cookie, $BF_API_TOKEN' \
-              --label='traefik.api.frontend.passHostHeader=true' \
-              --label='traefik.enable=true' \
-              --label='traefik.port=8083' \
-              --name battlefleet danackerson/battlefleet:vc$CIRCLE_BUILD_NUM"
-            $DEPLOY_CONNECT $DOCKER_RUN
-
-      - run:
-          name: Reenable Digital Ocean firewall
-          command: |
-            if [ -z $DEPLOY_SERVER_IP ]; then
-              curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/reenableFW.sh | sh
-            fi
-          when: always
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+        - build
+        - deploy:
+            requires:
+              - build
