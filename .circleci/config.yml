@@ -51,7 +51,7 @@ jobs:
           paths:
             - last_docker_push
 
-  docker:
+  deploy:
     docker:
       - image: google/cloud-sdk:alpine
     steps:
