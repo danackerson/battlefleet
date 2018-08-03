@@ -5,6 +5,9 @@ metadata:
   labels:
     app: battlefleet
 spec:
+  selector:
+    matchLabels:
+      app: battlefleet
   template:
     metadata:
       labels:
