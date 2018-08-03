@@ -51,6 +51,7 @@ jobs:
             - last_docker_push
 
   docker:
+    docker:
       - image: google/cloud-sdk:alpine
     steps:
       - checkout
