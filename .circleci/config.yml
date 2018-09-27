@@ -50,7 +50,7 @@ jobs:
     docker:
       - image: alpine
     steps:
-     - attach_workspace:
+      - attach_workspace:
           at: /tmp
 
       - add-ssh-keys:
