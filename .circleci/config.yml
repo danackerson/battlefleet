@@ -103,9 +103,9 @@ jobs:
               -e AUTH0_CLIENT_SECRET=$AUTH0_CLIENT_SECRET -e AUTH0_CALLBACK_URL=$AUTH0_CALLBACK_URL \
               --label='traefik.backend=battlefleet' \
               --label='traefik.docker.network=web' \
-              --label='traefik.game.frontend.rule=Host:battlefleet.online' \
+              --label='traefik.game.frontend.rule=Host:battlefleet.eu' \
               --label='traefik.game.frontend.passHostHeader=true' \
-              --label='traefik.api.frontend.rule=Host:api.battlefleet.online;HeadersRegexp:Cookie, $BF_API_TOKEN' \
+              --label='traefik.api.frontend.rule=Host:api.battlefleet.eu;HeadersRegexp:Cookie, $BF_API_TOKEN' \
               --label='traefik.api.frontend.passHostHeader=true' \
               --label='traefik.enable=true' \
               --label='traefik.port=8083' \

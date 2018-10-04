@@ -10,16 +10,16 @@ import (
 )
 
 func checkAPICall(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	// verify only API calls coming in on api.battlefleet.online
+	// verify only API calls coming in on api.battlefleet.eu
 	if strings.HasPrefix(r.Host, "api") {
 		if !strings.HasPrefix(r.URL.RequestURI(), "/version") &&
 			!strings.HasPrefix(r.URL.RequestURI(), "/api") {
-			http.Redirect(w, r, "https://battlefleet.online/", http.StatusMovedPermanently)
+			http.Redirect(w, r, "https://battlefleet.eu/", http.StatusMovedPermanently)
 		}
-		// and API calls to battlefleet are redirected to api.battlefleet.online
+		// and API calls to battlefleet are redirected to api.battlefleet.eu
 	} else if strings.HasPrefix(r.URL.RequestURI(), "/version") ||
 		strings.HasPrefix(r.URL.RequestURI(), "/api") {
-		http.Redirect(w, r, "https://api.battlefleet.online/", http.StatusMovedPermanently)
+		http.Redirect(w, r, "https://api.battlefleet.eu/", http.StatusMovedPermanently)
 	}
 
 	next(w, r)
