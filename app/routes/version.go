@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/danackerson/battlefleet/app"
 )
@@ -15,8 +16,14 @@ type Version struct {
 
 // GetVersionInfo does what it says on the box
 func GetVersionInfo() *Version {
+	urlVersion := app.Version
+
+	if strings.HasPrefix(urlVersion, "vc") {
+		urlVersion = strings.TrimLeft(urlVersion, "vc")
+	}
 	versionInfo := &Version{
-		URL: "https://circleci.com/gh/danackerson/battlefleet/" + app.Version,
+		// strip "vc" off version
+		URL: "https://circleci.com/gh/danackerson/battlefleet/" + urlVersion,
 		Tag: app.Version,
 	}
 	return versionInfo
