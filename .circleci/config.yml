@@ -40,7 +40,7 @@ jobs:
             docker push danackerson/battlefleet:vc$CIRCLE_BUILD_NUM
             docker push danackerson/battlefleet:latest
             echo vc$CIRCLE_BUILD_NUM > last_docker_push
-      
+
       - persist_to_workspace:
           root: /go/src/github.com/danackerson/battlefleet
           paths:
@@ -67,7 +67,8 @@ jobs:
       - run:
           name: Disable Digital Ocean firewall for deploy
           command: |
-            curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/disableFW.sh | sh
+            public_ip_address=$(curl -s https://checkip.amazonaws.com)
+            curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/addSSHipFW.sh | sh
 
       - attach_workspace:
           at: /tmp
@@ -85,7 +86,7 @@ jobs:
             echo "Deploy to $DEPLOY_SERVER"
 
             export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
-            
+
             if [ -f /tmp/last_docker_push ]; then
               export LAST_DOCKER_PUSH=`cat /tmp/last_docker_push`
             else
@@ -115,9 +116,8 @@ jobs:
       - run:
           name: Reenable Digital Ocean firewall
           command: |
-            if [ -z $DEPLOY_SERVER_IP ]; then
-              curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/reenableFW.sh | sh
-            fi
+            public_ip_address=$(curl -s https://checkip.amazonaws.com)
+            curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/dropSSHipFW.sh | sh
           when: always
 
 workflows:
