@@ -26,9 +26,9 @@ jobs:
           name: "Install Docker CE"
           command: |
             # https://download.docker.com/linux/static/stable/x86_64/
-            VER="18.06.1"
-            curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
-            rm docker-$VER-ce.tgz && rm -f /var/cache/apk/*
+            VER="18.09.0"
+            curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz && tar --strip-components=1 -xvzf docker-$VER.tgz -C /usr/local/bin
+            rm docker-$VER.tgz && rm -f /var/cache/apk/*
 
       - run:
           name: "Build the docker image & upload to DockerHub"
@@ -56,7 +56,7 @@ jobs:
       - run:
           name: Start ssh-agent
           command: |
-            apk add -U jq curl openssh-client
+            apk add -U curl openssh-client
 
             ssh-agent -s > ~/.ssh_agent_conf
             source ~/.ssh_agent_conf
@@ -67,7 +67,6 @@ jobs:
       - run:
           name: Disable Digital Ocean firewall for deploy
           command: |
-            public_ip_address=$(curl -s https://checkip.amazonaws.com)
             curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/addSSHipFW.sh | sh
 
       - attach_workspace:
@@ -76,9 +75,6 @@ jobs:
       - deploy:
           name: "deploy container to Digital Ocean Droplet & launch"
           command: |
-            source ~/.ssh_agent_conf
-            ssh-add -l
-
             export DEPLOY_SERVER=deploy.ackerson.de
             if [ $DEPLOY_SERVER_IP ]; then
               export DEPLOY_SERVER=$DEPLOY_SERVER_IP
@@ -116,7 +112,6 @@ jobs:
       - run:
           name: Reenable Digital Ocean firewall
           command: |
-            public_ip_address=$(curl -s https://checkip.amazonaws.com)
             curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/dropSSHipFW.sh | sh
           when: always
 
